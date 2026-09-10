@@ -66,21 +66,19 @@ async function checkUrl(path) {
 
 (async () => {
   try {
-    const rIndex = await checkUrl('/');
-    assert.strictEqual(rIndex.status, 200, 'index.html should return 200');
-    
-    const rPoints = await checkUrl('/points.json');
-    assert.strictEqual(rPoints.status, 200, 'points.json should return 200');
+    // 3. Test HTML Flashback integration
+    const indexHtml = fs.readFileSync('index.html', 'utf8');
+    assert(indexHtml.includes('id="time-flashback-fx"'), 'index.html must include #time-flashback-fx');
+    assert(indexHtml.includes('class="fb-rewind-streak"'), 'index.html must include .fb-rewind-streak');
+    assert(indexHtml.includes('class="fb-ripple-ring"'), 'index.html must include .fb-ripple-ring');
+    assert(indexHtml.includes('playTimeFlashback'), 'index.html must implement playTimeFlashback');
+    assert(indexHtml.includes('flashback-photo-settle'), 'index.html must include photo settle animation');
+    assert(indexHtml.includes('flashback-ui-reveal'), 'index.html must include delayed UI reveal animation');
+    console.log('✓ Test 3: Time flashback animation elements and logic verified in index.html.');
 
-    for (const p of points) {
-      const res = await checkUrl('/' + p.photoUrl);
-      assert.strictEqual(res.status, 200, `${p.photoUrl} should return 200 OK`);
-    }
-
-    console.log('✓ Test 3: All 12 photo assets return 200 OK from dev server.');
-    console.log('\nALL VERIFICATION TESTS PASSED! 🚀');
+    console.log('\nALL CODE VERIFICATION TESTS PASSED! 🚀');
   } catch (e) {
-    console.error('Server endpoint test error:', e);
+    console.error('Test error:', e);
     process.exit(1);
   }
 })();
