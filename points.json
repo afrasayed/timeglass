@@ -1,0 +1,124 @@
+{
+  "points": [
+    {
+      "id": "mushtifund-old",
+      "name": "Mushtifund Saunstha building",
+      "lat": 15.4965,
+      "lon": 73.8305,
+      "heading": 250,
+      "year": 1930,
+      "photoUrl": "photos/mushtifund-old.jpg",
+      "caption": "One of Goa's oldest non-profit educational institutions, founded 1908, teaching in Konkani/Marathi rather than Portuguese. Source: @memorias_de_pangim (year is approximate — verify)"
+    },
+    {
+      "id": "mushtifund-current",
+      "name": "Bookworm Trust & Library",
+      "lat": 15.4965,
+      "lon": 73.8305,
+      "heading": 250,
+      "year": 2025,
+      "photoUrl": "photos/mushtifund-current.jpg",
+      "caption": "Now Bookworm Trust & Library, House No. 127, Mala, Fontainhas — the children's library moved into this old blue-and-white building in September 2018"
+    },
+    {
+      "id": "uspa-old",
+      "name": "Mahatma Gandhi Road building (Virani Corporation)",
+      "lat": 15.4975,
+      "lon": 73.828,
+      "heading": 200,
+      "year": 2000,
+      "photoUrl": "photos/uspa-old.jpg",
+      "caption": "MG Road, Panjim — same building beside Virani Corporation, roughly 25 years before the current photo. Source: @memorias_de_pangim (year is approximate — verify)"
+    },
+    {
+      "id": "uspa-current",
+      "name": "U.S. Polo Assn., MG Road",
+      "lat": 15.4975,
+      "lon": 73.828,
+      "heading": 200,
+      "year": 2024,
+      "photoUrl": "photos/uspa-current.jpg",
+      "caption": "Now a U.S. Polo Assn. store, Survey No. 1625, MG Road, Panaji — beside Virani Corporation"
+    },
+    {
+      "id": "calangute-old",
+      "name": "Calangute Beach entrance",
+      "lat": 15.546,
+      "lon": 73.7586,
+      "heading": 270,
+      "year": 1992,
+      "photoUrl": "photos/calangute-old.jpg",
+      "caption": "Calangute Beach's old circular entrance plaza and steps down to the sand. Source: @retrogoa (posted 2020, photo dated 1992)"
+    },
+    {
+      "id": "calangute-current",
+      "name": "Calangute Beach",
+      "lat": 15.546,
+      "lon": 73.7586,
+      "heading": 270,
+      "year": 2024,
+      "photoUrl": "photos/calangute-current.jpg",
+      "caption": "Calangute Beach today — shacks, sunbeds and boats now line the same stretch of sand (exact photo year approximate)"
+    },
+    {
+      "id": "tito-old",
+      "name": "Tito's Lane",
+      "lat": 15.5563,
+      "lon": 73.7529,
+      "heading": 90,
+      "year": 1985,
+      "photoUrl": "photos/tito-old.jpg",
+      "caption": "Tito's Lane, Baga, long before it became Goa's best-known nightlife strip — a quiet unpaved lane lined with palms. Source: @vintagegoa.memories (year is a rough guess — no date given, verify)"
+    },
+    {
+      "id": "tito-current",
+      "name": "Tito's Lane",
+      "lat": 15.5563,
+      "lon": 73.7529,
+      "heading": 90,
+      "year": 2024,
+      "photoUrl": "photos/tito-current.jpg",
+      "caption": "Tito's Lane today at 2am — bars, spas, tattoo shops and crowds line the same stretch"
+    },
+    {
+      "id": "mandovi-old",
+      "name": "Mandovi River billboard hillside",
+      "lat": 15.4995,
+      "lon": 73.825,
+      "heading": 10,
+      "year": 1990,
+      "photoUrl": "photos/mandovi-old.jpg",
+      "caption": "The Reis Magos/Betim hillside across the Mandovi from Panjim — Kingfisher's sign has anchored this view for decades, though the surrounding ads (Spartan Beer, Sanjay Ghodawat Group) have changed. Year approximate, per your note (~1980s-90s) — verify"
+    },
+    {
+      "id": "mandovi-current",
+      "name": "Mandovi River billboard hillside",
+      "lat": 15.4995,
+      "lon": 73.825,
+      "heading": 10,
+      "year": 2024,
+      "photoUrl": "photos/mandovi-current.jpg",
+      "caption": "Same hillside today — Kingfisher still there, now alongside Casino Pride, Bellagio, LIC and Shikhar signage"
+    },
+    {
+      "id": "panjim-church-old",
+      "name": "Panaji Church (Our Lady of the Immaculate Conception)",
+      "lat": 15.4989,
+      "lon": 73.8278,
+      "heading": 0,
+      "year": 1990,
+      "photoUrl": "photos/panjim-church-old.jpg",
+      "caption": "Panjim's iconic church and grand staircase. Year approximate, per your note (~1980s-90s) — this source photo has a stylized filter applied, so treat the exact date as unconfirmed until verified"
+    },
+    {
+      "id": "panjim-church-current",
+      "name": "Panaji Church (Our Lady of the Immaculate Conception)",
+      "lat": 15.4989,
+      "lon": 73.8278,
+      "heading": 0,
+      "year": 2024,
+      "photoUrl": "photos/panjim-church-current.jpg",
+      "caption": "The same church and staircase today, largely unchanged in form since it was completed in 1619 and rebuilt in Baroque style over the centuries"
+    }
+  ]
+}

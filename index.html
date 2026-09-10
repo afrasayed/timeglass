@@ -1,0 +1,1477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Timeglass</title>
+<style>
+  :root {
+    --ink: #f4efe4;
+    --ink-dim: #b8ae98;
+    --amber: #c9924f;
+    --amber-dim: #8a6636;
+    --amber-glow: rgba(201, 146, 79, 0.45);
+    --panel: rgba(20, 17, 12, 0.85);
+    --panel-border: rgba(201, 146, 79, 0.25);
+    --bg: #0c0a08;
+    --safe-bottom: env(safe-area-inset-bottom, 16px);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Shared Fullscreen Camera Video Element */
+  #camera {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    background: #000;
+    display: block;
+    transition: filter 0.6s ease-out;
+  }
+  #camera.portal-warp {
+    animation: cameraPortalWarp 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+  @keyframes cameraPortalWarp {
+    0% { filter: brightness(1) saturate(1); }
+    30% { filter: brightness(0.65) saturate(0.2) contrast(1.15); }
+    100% { filter: brightness(1) saturate(1) contrast(1); }
+  }
+
+  /* Time-Portal Shimmer & Flare Overlay */
+  #time-portal-fx {
+    position: fixed; inset: 0; pointer-events: none; z-index: 4;
+    opacity: 0;
+    background: radial-gradient(circle at center, rgba(201, 146, 79, 0.5) 0%, rgba(201, 146, 79, 0.18) 45%, transparent 75%);
+    mix-blend-mode: screen;
+  }
+  #time-portal-fx.portal-active {
+    animation: portalPulse 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes portalPulse {
+    0% {
+      opacity: 0;
+      transform: scale(0.85);
+      filter: blur(10px) brightness(1.8);
+    }
+    30% {
+      opacity: 0.95;
+      transform: scale(1.04);
+      filter: blur(3px) brightness(1.4);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.22);
+      filter: blur(14px) brightness(1.0);
+    }
+  }
+
+  /* Historical Photo Overlay with Portal Materialization */
+  #overlay-photo {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: 2;
+  }
+  #vignette {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 48%, rgba(0,0,0,0.65) 100%);
+    z-index: 3;
+  }
+
+  /* Start Screen */
+  #start-screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 32px; text-align: center;
+    background: #0e0c09;
+    z-index: 60;
+  }
+  #start-screen h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400; font-size: 38px; letter-spacing: 0.8px;
+    color: var(--ink); margin: 0;
+  }
+  #start-screen p {
+    color: var(--ink-dim); font-size: 15px; line-height: 1.55; max-width: 330px; margin: 0;
+  }
+  #start-btn {
+    margin-top: 14px; padding: 14px 36px;
+    background: var(--amber); color: #1a1208; border: none; border-radius: 6px;
+    font-size: 16px; font-weight: 600; letter-spacing: 0.3px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px var(--amber-glow);
+    transition: transform 0.1s ease, background 0.2s ease;
+  }
+  #start-btn:active { transform: scale(0.97); background: var(--amber-dim); }
+  #start-error { color: #d97b6c; font-size: 13px; max-width: 320px; line-height: 1.4; }
+
+  /* Navigation / Mode Switcher Bar */
+  #mode-nav {
+    position: fixed; bottom: max(12px, var(--safe-bottom)); left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 6px; padding: 5px;
+    background: rgba(14, 12, 9, 0.92);
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    z-index: 50;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  }
+  .mode-tab {
+    padding: 8px 18px; border-radius: 999px;
+    border: none; background: transparent;
+    color: var(--ink-dim); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s ease;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .mode-tab.active {
+    background: var(--amber); color: #1a1208; font-weight: 700;
+    box-shadow: 0 2px 10px var(--amber-glow);
+  }
+
+  /* Chrome Headers & Footers */
+  .chrome { position: fixed; left: 0; right: 0; padding: 16px 18px; z-index: 10; pointer-events: none; }
+  .chrome * { pointer-events: auto; }
+  
+  #status-bar {
+    top: 0; display: flex; justify-content: space-between; align-items: flex-start;
+    background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.25) 75%, transparent);
+    padding-top: max(16px, env(safe-area-inset-top, 16px));
+    padding-bottom: 24px;
+  }
+  #status-left { display: flex; flex-direction: column; gap: 4px; max-width: 70%; }
+  #status-text { font-size: 13px; color: var(--ink-dim); line-height: 1.4; }
+  #status-text strong { color: var(--ink); }
+  #heading-guide { font-size: 12px; color: var(--amber); display: none; font-weight: 500; }
+  
+  #status-right { display: flex; align-items: center; gap: 10px; }
+  #year-badge {
+    font-family: Georgia, serif; font-size: 28px; color: var(--amber);
+    line-height: 1; font-weight: 600;
+  }
+  #debug-toggle-btn {
+    background: var(--panel); border: 1px solid var(--panel-border);
+    color: var(--ink-dim); border-radius: 50%; width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 14px;
+  }
+
+  /* Scan View Specifics */
+  #scan-bottom-bar {
+    bottom: 64px; display: flex; flex-direction: column; gap: 10px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.4) 25%, rgba(0,0,0,0.8));
+    padding-bottom: 12px; padding-top: 24px;
+  }
+  #caption {
+    font-size: 14px; color: var(--ink); min-height: 18px; line-height: 1.4;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  }
+  #caption .src { color: var(--ink-dim); font-size: 12px; }
+
+  #era-track { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  #era-track::-webkit-scrollbar { display: none; }
+  .era-btn {
+    flex: none; padding: 7px 15px; border-radius: 999px;
+    border: 1px solid var(--amber-dim); background: var(--panel);
+    color: var(--ink-dim); font-size: 13px; white-space: nowrap;
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .era-btn.active {
+    background: var(--amber); color: #1a1208;
+    border-color: var(--amber); font-weight: 700;
+    box-shadow: 0 0 12px var(--amber-glow);
+  }
+
+  /* Field Calibration / Debug HUD */
+  #debug-hud {
+    position: fixed; top: 76px; right: 14px; left: 14px;
+    max-width: 420px; margin: 0 auto;
+    background: rgba(14, 12, 9, 0.94);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px; padding: 14px;
+    z-index: 30; font-size: 12px; color: var(--ink-dim);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none; flex-direction: column; gap: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  }
+  #debug-hud.visible { display: flex; }
+  .hud-row { display: flex; justify-content: space-between; align-items: center; }
+  .hud-val { color: var(--ink); font-family: monospace; font-size: 12px; }
+  .hud-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .hud-btn {
+    flex: 1; padding: 6px 10px; background: #262118;
+    border: 1px solid var(--amber-dim); color: var(--ink);
+    border-radius: 4px; font-size: 11px; cursor: pointer;
+    text-align: center;
+  }
+  .hud-btn:active { background: var(--amber-dim); }
+  .hud-btn.active-sim { background: var(--amber); color: #1a1208; font-weight: 600; }
+  #hud-copy-msg { color: #88d49e; font-size: 11px; display: none; text-align: center; }
+
+  /* ----------------- Snap Mode UI ----------------- */
+  #snap-view {
+    position: fixed; inset: 0; pointer-events: none; z-index: 15;
+    display: none; flex-direction: column; justify-content: space-between;
+  }
+  #snap-view.active-view { display: flex; }
+  #snap-view * { pointer-events: auto; }
+
+  #snap-reticle {
+    position: absolute; top: 46%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 260px; height: 260px;
+    border: 2px dashed rgba(201, 146, 79, 0.55);
+    border-radius: 12px;
+    pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #snap-reticle::before {
+    content: "Frame building facade";
+    color: rgba(244, 239, 228, 0.7); font-size: 12px; font-weight: 500;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  }
+
+  #snap-controls {
+    position: absolute; bottom: 84px; left: 0; right: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    z-index: 20;
+  }
+  #snap-status-pill {
+    padding: 6px 14px; border-radius: 999px;
+    background: rgba(20, 17, 12, 0.88);
+    border: 1px solid var(--panel-border);
+    color: var(--ink-dim); font-size: 12px; font-weight: 500;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+  }
+  #shutter-btn {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: transparent; border: 4px solid var(--ink);
+    position: relative; cursor: pointer; transition: transform 0.1s ease, opacity 0.2s ease;
+    padding: 0; outline: none;
+  }
+  #shutter-btn::after {
+    content: ""; position: absolute; inset: 6px;
+    border-radius: 50%; background: var(--amber);
+    transition: transform 0.1s ease, background 0.2s;
+  }
+  #shutter-btn:active { transform: scale(0.92); }
+  #shutter-btn:active::after { background: var(--amber-dim); transform: scale(0.9); }
+  #shutter-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* Model Status & Progress */
+  #model-banner {
+    position: fixed; top: 68px; left: 16px; right: 16px; max-width: 400px; margin: 0 auto;
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 8px; padding: 12px 16px; z-index: 45;
+    display: none; flex-direction: column; gap: 6px;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  #model-banner-text { font-size: 13px; color: var(--ink); font-weight: 500; }
+  #model-progress-bar {
+    width: 100%; height: 6px; background: rgba(255,255,255,0.1);
+    border-radius: 3px; overflow: hidden;
+  }
+  #model-progress-fill {
+    height: 100%; width: 0%; background: var(--amber);
+    transition: width 0.2s ease;
+  }
+
+  /* Snap Result Sheet / Modal */
+  #snap-modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 55; display: none; align-items: flex-end; justify-content: center;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  #snap-modal.visible { display: flex; }
+  #snap-card {
+    width: 100%; max-width: 500px;
+    background: #14120e; border-top: 1px solid var(--panel-border);
+    border-radius: 16px 16px 0 0;
+    padding: 20px 20px calc(24px + var(--safe-bottom));
+    display: flex; flex-direction: column; gap: 14px;
+    animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    max-height: 85vh; overflow-y: auto;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  .result-header { display: flex; justify-content: space-between; align-items: center; }
+  .result-tag {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 4px 10px; border-radius: 4px; font-weight: 700;
+  }
+  .tag-match { background: #22543d; color: #9ae6b4; }
+  .tag-nomatch { background: #742a2a; color: #feb2b2; }
+  .result-title { font-family: Georgia, serif; font-size: 22px; color: var(--ink); margin: 0; }
+  .result-desc { font-size: 13px; color: var(--ink-dim); line-height: 1.5; margin: 0; }
+
+  .comparison-container {
+    display: flex; flex-direction: column; gap: 8px; margin-top: 4px;
+  }
+  .comparison-tabs { display: flex; gap: 6px; }
+  .comp-tab-btn {
+    flex: 1; padding: 8px; background: #221d15; border: 1px solid var(--amber-dim);
+    color: var(--ink-dim); border-radius: 6px; font-size: 12px; cursor: pointer;
+  }
+  .comp-tab-btn.active { background: var(--amber); color: #1a1208; font-weight: 700; }
+  .comparison-img-box {
+    width: 100%; height: 220px; border-radius: 8px; overflow: hidden;
+    position: relative; background: #080706; border: 1px solid rgba(255,255,255,0.08);
+  }
+  .comparison-img-box img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+
+  .result-actions { display: flex; gap: 10px; margin-top: 6px; }
+  .btn-primary {
+    flex: 1; padding: 12px; background: var(--amber); color: #1a1208;
+    border: none; border-radius: 6px; font-weight: 700; font-size: 14px;
+    cursor: pointer; text-align: center;
+  }
+  .btn-secondary {
+    flex: 1; padding: 12px; background: #221d15; color: var(--ink);
+    border: 1px solid var(--panel-border); border-radius: 6px; font-weight: 600; font-size: 14px;
+    cursor: pointer; text-align: center;
+  }
+
+  /* ----------------- Browse Mode UI ----------------- */
+  #browse-view {
+    position: fixed; inset: 0; padding-top: max(74px, env(safe-area-inset-top, 74px));
+    padding-bottom: calc(80px + var(--safe-bottom));
+    overflow-y: auto; z-index: 15; background: var(--bg);
+    display: none; flex-direction: column; gap: 20px; padding-left: 18px; padding-right: 18px;
+  }
+  #browse-view.active-view { display: flex; }
+  .browse-header h2 { font-family: Georgia, serif; font-size: 26px; color: var(--ink); margin: 0 0 6px; }
+  .browse-header p { font-size: 14px; color: var(--ink-dim); margin: 0; line-height: 1.4; }
+
+  .location-card {
+    background: #15120d; border: 1px solid var(--panel-border);
+    border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+  }
+  .loc-card-media {
+    width: 100%; height: 230px; position: relative; background: #000;
+  }
+  .loc-card-media img { width: 100%; height: 100%; object-fit: cover; }
+  .loc-card-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .loc-title { font-family: Georgia, serif; font-size: 20px; color: var(--ink); margin: 0; }
+  .loc-caption { font-size: 13px; color: var(--ink-dim); line-height: 1.5; margin: 0; }
+  .loc-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--amber); }
+
+  /* Snap Shutter Flash Effect */
+  #snap-flash {
+    position: fixed; inset: 0; background: white; opacity: 0;
+    pointer-events: none; z-index: 70; transition: opacity 0.15s ease-out;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Start / Permissions Screen -->
+  <div id="start-screen">
+    <h1>Timeglass</h1>
+    <p>Explore Panjim's heritage through historical AR overlays, on-device AI snap recognition, and archival photo comparisons.</p>
+    <button id="start-btn">Begin</button>
+    <p id="start-error"></p>
+  </div>
+
+  <!-- Shared Fullscreen Camera Video Element & Time Portal FX -->
+  <video id="camera" autoplay playsinline webkit-playsinline muted></video>
+  <img id="overlay-photo" alt="">
+  <div id="time-portal-fx"></div>
+  <div id="vignette"></div>
+  <div id="snap-flash"></div>
+
+  <!-- Top Status Bar (Scan & Snap mode) -->
+  <div class="chrome" id="status-bar">
+    <div id="status-left">
+      <div id="status-text">Locating you…</div>
+      <div id="heading-guide"></div>
+    </div>
+    <div id="status-right">
+      <button id="debug-toggle-btn" title="Field Calibration HUD">⚙</button>
+      <div id="year-badge"></div>
+    </div>
+  </div>
+
+  <!-- Field Calibration HUD (Scan mode) -->
+  <div id="debug-hud">
+    <div class="hud-row">
+      <span>Live GPS:</span>
+      <span id="hud-gps" class="hud-val">Waiting…</span>
+    </div>
+    <div class="hud-row">
+      <span>Live Heading:</span>
+      <span id="hud-heading" class="hud-val">Waiting…</span>
+    </div>
+    <div class="hud-row">
+      <span>Active Target:</span>
+      <span id="hud-target" class="hud-val">None</span>
+    </div>
+    <div class="hud-row">
+      <span>Match Metrics:</span>
+      <span id="hud-metrics" class="hud-val">--</span>
+    </div>
+    <div class="hud-actions">
+      <button class="hud-btn" id="hud-copy-btn">📋 Copy GPS & Heading (JSON)</button>
+      <button class="hud-btn" id="hud-sim-btn">📍 Simulate Goa Site</button>
+    </div>
+    <div id="hud-copy-msg">✓ Copied current fix to clipboard!</div>
+  </div>
+
+  <!-- Scan Mode Chrome Bottom -->
+  <div class="chrome" id="scan-bottom-bar">
+    <div id="caption"></div>
+    <div id="era-track"></div>
+  </div>
+
+  <!-- ----------------- Snap to Identify View ----------------- -->
+  <div id="snap-view">
+    <div id="snap-reticle"></div>
+    <div id="snap-controls">
+      <div id="snap-status-pill">Preparing camera…</div>
+      <button id="shutter-btn" title="Snap to Identify" disabled></button>
+    </div>
+  </div>
+
+  <!-- AI Model Loading Banner -->
+  <div id="model-banner">
+    <div id="model-banner-text">Loading on-device vision model…</div>
+    <div id="model-progress-bar"><div id="model-progress-fill"></div></div>
+  </div>
+
+  <!-- Snap Result Modal / Sheet -->
+  <div id="snap-modal">
+    <div id="snap-card">
+      <div class="result-header">
+        <span id="snap-result-tag" class="result-tag tag-match">Visual Match</span>
+        <span id="snap-score-badge" style="font-size:12px; color:var(--amber); font-weight:600;">88% Match</span>
+      </div>
+      <h3 id="snap-result-title" class="result-title">Mushtifund Saunstha</h3>
+      <p id="snap-result-desc" class="result-desc">One of Goa's oldest educational institutions...</p>
+
+      <div class="comparison-container" id="snap-comp-box">
+        <div class="comparison-tabs" id="snap-comp-tabs"></div>
+        <div class="comparison-img-box">
+          <img id="snap-comp-img" src="" alt="Comparison">
+        </div>
+      </div>
+
+      <div class="result-actions" id="snap-actions">
+        <button class="btn-primary" id="snap-action-ar">View in AR Scan</button>
+        <button class="btn-secondary" id="snap-action-close">Snap Another</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ----------------- Browse Mode View ----------------- -->
+  <div id="browse-view">
+    <div class="browse-header">
+      <h2>Tagged Archives</h2>
+      <p>Explore historical viewpoints and compare how Panjim transformed over the centuries.</p>
+    </div>
+    <div id="browse-cards-container" style="display:flex; flex-direction:column; gap:18px;"></div>
+  </div>
+
+  <!-- Global Mode Switcher Navigation -->
+  <div id="mode-nav">
+    <button class="mode-tab active" data-mode="scan">📡 Scan</button>
+    <button class="mode-tab" data-mode="snap">📸 Snap</button>
+    <button class="mode-tab" data-mode="browse">🏛️ Browse</button>
+  </div>
+
+<script type="module">
+/* ---------- config ---------- */
+const MATCH_RADIUS_M = 60;          // how close you must be to a point, in meters (Scan mode)
+const HEADING_CONE_DEG = 70;        // how far off-heading still counts as a match (Scan mode)
+const SNAP_MATCH_THRESHOLD = 0.48;  // Tuned for multimodal (image + text) angle robustness
+const CLIP_CACHE_KEY = 'timeglass_clip_embeddings_v5';
+const CLIP_TEXT_CACHE_KEY = 'timeglass_clip_text_embeddings_v5';
+
+/* ---------- application state ---------- */
+let currentMode = 'scan'; // 'scan' | 'snap' | 'browse'
+let points = [];
+let eras = [];
+let activeEra = null;
+let currentPos = null;          // {lat, lon, accuracy}
+let currentHeading = null;      // degrees, 0 = north
+let headingSource = 'none';     // 'ios' | 'absolute' | 'relative' | 'simulated'
+let isAbsoluteHeadingActive = false;
+let currentPhotoUrl = null;
+let isSimulating = false;
+let tickQueued = false;
+let isSensorsStarted = false;
+let isCameraStarted = false;
+let lastMatchedLocationKey = null;
+
+// CLIP Transformers (Vision + Text) State
+let processor = null;
+let visionModel = null;
+let tokenizer = null;
+let textModel = null;
+let RawImageClass = null;
+let referenceEmbeddings = []; // Array of { point, embedding: Float32Array }
+let textEmbeddings = {};      // Map of locKey -> Float32Array
+let isModelLoading = false;
+let isModelReady = false;
+
+// Location Semantic Text Descriptions for Zero-Shot Disambiguation
+const LOCATION_DESCRIPTIONS = {
+  'mushtifund': 'a photo of Mushtifund Saunstha, Bookworm Trust and Library, historic blue and white Portuguese heritage educational building in Mala Fontainhas Panjim Goa',
+  'uspa': 'a photo of U.S. Polo Assn. retail clothing store, modern commercial shop building beside Virani Corporation on MG Road in Panjim Goa',
+  'calangute': 'a photo of Calangute Beach entrance plaza, beach shacks, sand, umbrellas, sunbeds, and ocean coast in Goa',
+  'tito': 'a photo of Tito\'s Lane in Baga Goa, nightlife party strip with nightclubs, bars, restaurants, and palm trees',
+  'mandovi': 'a photo of Mandovi River hillside view across from Panjim, Kingfisher and casino advertising billboards on the hill',
+  'panjim-church': 'a photo of Panaji Church, Our Lady of the Immaculate Conception, iconic white baroque church with zig-zag grand staircase in Panjim Goa'
+};
+
+const els = {
+  camera: document.getElementById('camera'),
+  photo: document.getElementById('overlay-photo'),
+  timePortalFx: document.getElementById('time-portal-fx'),
+  status: document.getElementById('status-text'),
+  headingGuide: document.getElementById('heading-guide'),
+  yearBadge: document.getElementById('year-badge'),
+  caption: document.getElementById('caption'),
+  eraTrack: document.getElementById('era-track'),
+  startScreen: document.getElementById('start-screen'),
+  startBtn: document.getElementById('start-btn'),
+  startError: document.getElementById('start-error'),
+  debugHud: document.getElementById('debug-hud'),
+  debugToggleBtn: document.getElementById('debug-toggle-btn'),
+  hudGps: document.getElementById('hud-gps'),
+  hudHeading: document.getElementById('hud-heading'),
+  hudTarget: document.getElementById('hud-target'),
+  hudMetrics: document.getElementById('hud-metrics'),
+  hudCopyBtn: document.getElementById('hud-copy-btn'),
+  hudSimBtn: document.getElementById('hud-sim-btn'),
+  hudCopyMsg: document.getElementById('hud-copy-msg'),
+  statusBar: document.getElementById('status-bar'),
+  scanBottomBar: document.getElementById('scan-bottom-bar'),
+  snapView: document.getElementById('snap-view'),
+  browseView: document.getElementById('browse-view'),
+  shutterBtn: document.getElementById('shutter-btn'),
+  snapStatusPill: document.getElementById('snap-status-pill'),
+  snapModal: document.getElementById('snap-modal'),
+  snapResultTag: document.getElementById('snap-result-tag'),
+  snapScoreBadge: document.getElementById('snap-score-badge'),
+  snapResultTitle: document.getElementById('snap-result-title'),
+  snapResultDesc: document.getElementById('snap-result-desc'),
+  snapCompBox: document.getElementById('snap-comp-box'),
+  snapCompTabs: document.getElementById('snap-comp-tabs'),
+  snapCompImg: document.getElementById('snap-comp-img'),
+  snapActionAr: document.getElementById('snap-action-ar'),
+  snapActionClose: document.getElementById('snap-action-close'),
+  modelBanner: document.getElementById('model-banner'),
+  modelBannerText: document.getElementById('model-banner-text'),
+  modelProgressFill: document.getElementById('model-progress-fill'),
+  browseContainer: document.getElementById('browse-cards-container'),
+  snapFlash: document.getElementById('snap-flash'),
+};
+
+/* ---------- Time Portal Transition Effect ---------- */
+function triggerTimePortalFX() {
+  els.timePortalFx.classList.remove('portal-active');
+  els.camera.classList.remove('portal-warp');
+  void els.timePortalFx.offsetWidth; // force DOM reflow
+  void els.camera.offsetWidth;
+  els.timePortalFx.classList.add('portal-active');
+  els.camera.classList.add('portal-warp');
+}
+
+/* ---------- Navigation & Mode Switcher ---------- */
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => switchMode(tab.dataset.mode));
+});
+
+async function switchMode(mode) {
+  if (currentMode === mode) return;
+  currentMode = mode;
+
+  // Dismiss start screen if still showing
+  els.startScreen.style.display = 'none';
+
+  // Update tabs
+  document.querySelectorAll('.mode-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.mode === mode);
+  });
+
+  // Ensure points are loaded if not yet
+  if (points.length === 0) {
+    await loadPoints().catch(e => console.warn(e));
+  }
+
+  // Mode View Toggling
+  if (mode === 'scan') {
+    els.camera.style.display = 'block';
+    els.scanBottomBar.style.display = 'flex';
+    els.statusBar.style.display = 'flex';
+    els.snapView.classList.remove('active-view');
+    els.browseView.classList.remove('active-view');
+    els.photo.style.display = 'block';
+    
+    // Start camera immediately
+    startCamera().catch(e => console.warn(e));
+    if (!isSensorsStarted) {
+      startSensors().catch(e => console.warn(e));
+    }
+    requestTick();
+  } else if (mode === 'snap') {
+    els.camera.style.display = 'block';
+    els.scanBottomBar.style.display = 'none';
+    els.statusBar.style.display = 'flex';
+    els.status.innerHTML = '<strong>Snap to Identify</strong> — Point at a building and tap shutter';
+    els.headingGuide.style.display = 'none';
+    els.yearBadge.textContent = 'AI';
+    els.photo.style.opacity = '0';
+    els.snapView.classList.add('active-view');
+    els.browseView.classList.remove('active-view');
+    
+    // PARALLEL STARTUP: 1. Start camera feed IMMEDIATELY (no blocking)
+    startCamera().then(() => {
+      if (isModelReady) {
+        els.snapStatusPill.textContent = 'Tap shutter to identify';
+        els.shutterBtn.disabled = false;
+      } else {
+        els.snapStatusPill.textContent = 'Preparing AI vision model in background…';
+        els.shutterBtn.disabled = true;
+      }
+    }).catch(e => {
+      console.warn('Snap mode camera error:', e);
+      els.snapStatusPill.textContent = 'Camera error: ' + e.message;
+      els.status.innerHTML = '<strong>Camera error:</strong> ' + e.message;
+    });
+
+    // 2. Start model loading in background independently
+    initClipModel();
+  } else if (mode === 'browse') {
+    els.scanBottomBar.style.display = 'none';
+    els.statusBar.style.display = 'none';
+    els.photo.style.opacity = '0';
+    els.snapView.classList.remove('active-view');
+    els.browseView.classList.add('active-view');
+    renderBrowseCatalog();
+  }
+}
+
+/* ---------- Boot Flow ---------- */
+els.startBtn.addEventListener('click', begin);
+els.debugToggleBtn.addEventListener('click', () => {
+  els.debugHud.classList.toggle('visible');
+});
+
+els.hudSimBtn.addEventListener('click', () => {
+  isSimulating = !isSimulating;
+  els.hudSimBtn.classList.toggle('active-sim', isSimulating);
+  if (isSimulating) {
+    currentPos = { lat: 15.4965, lon: 73.8305, accuracy: 5 };
+    currentHeading = 250;
+    headingSource = 'simulated';
+  }
+  requestTick();
+});
+
+els.hudCopyBtn.addEventListener('click', () => {
+  if (!currentPos) {
+    alert('No GPS fix available yet to copy.');
+    return;
+  }
+  const fixData = {
+    lat: Number(currentPos.lat.toFixed(6)),
+    lon: Number(currentPos.lon.toFixed(6)),
+    heading: currentHeading !== null ? Math.round(currentHeading) : 0,
+    accuracyMeters: currentPos.accuracy ? Math.round(currentPos.accuracy) : null
+  };
+  const jsonStr = JSON.stringify(fixData, null, 2);
+  navigator.clipboard.writeText(jsonStr).then(() => {
+    els.hudCopyMsg.style.display = 'block';
+    setTimeout(() => { els.hudCopyMsg.style.display = 'none'; }, 2500);
+  }).catch(() => {
+    prompt('Current fix JSON:', jsonStr);
+  });
+});
+
+async function begin() {
+  els.startError.textContent = '';
+  try {
+    await loadPoints();
+    // Start camera immediately
+    startCamera().catch(err => {
+      console.warn('Camera warning:', err);
+      els.status.textContent = 'Camera unavailable. Sensor mode active.';
+    });
+    await startSensors();
+    els.startScreen.style.display = 'none';
+    requestTick();
+  } catch (err) {
+    console.error(err);
+    els.startError.textContent = 'Could not start: ' + err.message + '. Check permissions and reload.';
+  }
+}
+
+async function startCamera() {
+  if (isCameraStarted && els.camera.srcObject && els.camera.srcObject.active) {
+    if (els.camera.paused) {
+      await els.camera.play().catch(() => {});
+    }
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      },
+      audio: false,
+    });
+    els.camera.srcObject = stream;
+    els.camera.muted = true;
+    els.camera.playsInline = true;
+    els.camera.setAttribute('playsinline', '');
+    els.camera.setAttribute('webkit-playsinline', '');
+    els.camera.setAttribute('muted', '');
+    await els.camera.play().catch(e => console.warn('Camera play warning:', e));
+    isCameraStarted = true;
+    console.log('Camera started successfully. Video size:', els.camera.videoWidth, 'x', els.camera.videoHeight);
+  } catch (err) {
+    console.warn('Could not initialize camera:', err);
+    throw err;
+  }
+}
+
+async function startSensors() {
+  if (isSensorsStarted) return;
+  // iOS Safari requires an explicit permission prompt triggered by a user gesture
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    const res = await DeviceOrientationEvent.requestPermission();
+    if (res !== 'granted') throw new Error('motion permission denied');
+  }
+
+  if ('ondeviceorientationabsolute' in window) {
+    window.addEventListener('deviceorientationabsolute', onOrientationAbsolute, true);
+  }
+  window.addEventListener('deviceorientation', onOrientationStandard, true);
+  startGeolocation();
+  isSensorsStarted = true;
+}
+
+function onOrientationAbsolute(e) {
+  if (isSimulating || currentMode !== 'scan') return;
+  if (typeof e.alpha === 'number' && !isNaN(e.alpha)) {
+    isAbsoluteHeadingActive = true;
+    currentHeading = (360 - e.alpha) % 360;
+    headingSource = 'absolute';
+    requestTick();
+  }
+}
+
+function onOrientationStandard(e) {
+  if (isSimulating || currentMode !== 'scan') return;
+  if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
+    currentHeading = e.webkitCompassHeading;
+    headingSource = 'ios';
+    requestTick();
+  } else if (!isAbsoluteHeadingActive && typeof e.alpha === 'number' && !isNaN(e.alpha)) {
+    currentHeading = (360 - e.alpha) % 360;
+    headingSource = 'relative';
+    requestTick();
+  }
+}
+
+function startGeolocation() {
+  if (!('geolocation' in navigator)) {
+    els.status.textContent = 'Geolocation not supported';
+    return;
+  }
+  navigator.geolocation.watchPosition(
+    (pos) => {
+      if (isSimulating) return;
+      currentPos = {
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude,
+        accuracy: pos.coords.accuracy
+      };
+      if (currentMode === 'scan') requestTick();
+    },
+    (err) => {
+      if (!isSimulating && currentMode === 'scan') {
+        els.status.textContent = 'Location error: ' + err.message;
+      }
+    },
+    { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+  );
+}
+
+async function loadPoints() {
+  const res = await fetch('points.json');
+  if (!res.ok) throw new Error('Failed to load points.json (' + res.status + ')');
+  const data = await res.json();
+  points = data.points || [];
+  console.log('Loaded', points.length, 'points:', [...new Set(points.map(p => p.name))]);
+  
+  // Default to the earliest/oldest year in entire dataset initially
+  eras = [...new Set(points.map(p => p.year))].sort((a, b) => a - b);
+  activeEra = eras.length > 0 ? eras[0] : null;
+  
+  // Preload photo assets
+  points.forEach(p => {
+    if (p.photoUrl) {
+      const img = new Image();
+      img.src = p.photoUrl;
+    }
+  });
+
+  renderEraButtons();
+}
+
+function renderEraButtons(customEras = null) {
+  els.eraTrack.innerHTML = '';
+  const currentEras = customEras || eras;
+  currentEras.forEach(year => {
+    const btn = document.createElement('button');
+    btn.className = 'era-btn' + (year === activeEra ? ' active' : '');
+    btn.textContent = year;
+    btn.onclick = () => {
+      activeEra = year;
+      renderEraButtons(customEras);
+      requestTick();
+    };
+    els.eraTrack.appendChild(btn);
+  });
+}
+
+/* ---------- Matching Math ---------- */
+function haversineMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function headingDiff(a, b) {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+function findBestMatch() {
+  if (!currentPos || points.length === 0) return null;
+
+  // 1. Group points by location and identify proximity
+  let nearestPoint = null;
+  let minDistance = Infinity;
+
+  for (const p of points) {
+    const dist = haversineMeters(currentPos.lat, currentPos.lon, p.lat, p.lon);
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearestPoint = p;
+    }
+  }
+
+  if (!nearestPoint) return null;
+
+  const locKey = nearestPoint.id.replace(/-old|-current$/, '');
+  const locPoints = points.filter(p => p.id.replace(/-old|-current$/, '') === locKey || (p.lat === nearestPoint.lat && p.lon === nearestPoint.lon));
+  const locEras = [...new Set(locPoints.map(p => p.year))].sort((a, b) => a - b);
+  const oldestPoint = locPoints.reduce((min, p) => p.year < min.year ? p : min, locPoints[0]);
+
+  // Check if within distance
+  if (minDistance > MATCH_RADIUS_M) {
+    lastMatchedLocationKey = null;
+    return { best: null, nearestInEra: { point: nearestPoint, dist: minDistance }, locEras };
+  }
+
+  // Check heading
+  let hd = 0;
+  if (currentHeading !== null) {
+    hd = headingDiff(currentHeading, nearestPoint.heading);
+    if (hd > HEADING_CONE_DEG) {
+      return { best: null, nearestInEra: { point: nearestPoint, dist: minDistance }, locEras };
+    }
+  }
+
+  let score = (1 - minDistance / MATCH_RADIUS_M);
+  if (currentHeading !== null) {
+    score *= (1 - hd / HEADING_CONE_DEG);
+  }
+
+  // FRESH MATCH LOGIC: Always default to the OLDEST tagged era for a matched location
+  if (lastMatchedLocationKey !== locKey) {
+    lastMatchedLocationKey = locKey;
+    activeEra = oldestPoint.year;
+    renderEraButtons(locEras);
+    triggerTimePortalFX();
+  }
+
+  // Current display point based on activeEra
+  const activeEraPoint = locPoints.find(p => p.year === activeEra) || oldestPoint;
+
+  return {
+    best: { point: activeEraPoint, dist: minDistance, hd, score, oldestPoint, locKey },
+    nearestInEra: { point: activeEraPoint, dist: minDistance },
+    locEras
+  };
+}
+
+function requestTick() {
+  if (tickQueued || currentMode !== 'scan') return;
+  tickQueued = true;
+  requestAnimationFrame(() => {
+    tickQueued = false;
+    tick();
+  });
+}
+
+/* ---------- Scan Mode Tick ---------- */
+function tick() {
+  if (currentMode !== 'scan') return;
+  els.yearBadge.textContent = activeEra ?? '';
+  const matchResult = findBestMatch();
+  const match = matchResult ? matchResult.best : null;
+  const nearest = matchResult ? matchResult.nearestInEra : null;
+
+  // Field HUD Updates
+  if (currentPos) {
+    const acc = currentPos.accuracy ? ` ±${Math.round(currentPos.accuracy)}m` : '';
+    els.hudGps.textContent = `${currentPos.lat.toFixed(5)}, ${currentPos.lon.toFixed(5)}${acc}`;
+  } else {
+    els.hudGps.textContent = 'Acquiring GPS…';
+  }
+
+  if (currentHeading !== null) {
+    els.hudHeading.textContent = `${Math.round(currentHeading)}° (${headingSource})`;
+  } else {
+    els.hudHeading.textContent = 'None';
+  }
+
+  if (nearest) {
+    const hd = currentHeading !== null ? `${Math.round(headingDiff(currentHeading, nearest.point.heading))}°` : 'N/A';
+    els.hudTarget.textContent = `${nearest.point.name} (${nearest.point.year})`;
+    els.hudMetrics.textContent = `${Math.round(nearest.dist)}m away | Δhd: ${hd}`;
+  } else {
+    els.hudTarget.textContent = 'None';
+    els.hudMetrics.textContent = '--';
+  }
+
+  // Cross-fade Photo with portal materialization
+  if (match) {
+    if (currentPhotoUrl !== match.point.photoUrl) {
+      currentPhotoUrl = match.point.photoUrl;
+      els.photo.src = currentPhotoUrl;
+    }
+    els.photo.style.opacity = Math.max(0.4, match.score).toFixed(2);
+    els.caption.innerHTML = `${match.point.name} <span class="src">— ${match.point.caption || ''}</span>`;
+    els.status.innerHTML = `<strong>${match.point.name}</strong> — ${Math.round(match.dist)}m away`;
+    els.headingGuide.style.display = 'none';
+  } else {
+    els.photo.style.opacity = '0';
+    els.caption.textContent = '';
+
+    if (nearest && nearest.dist <= MATCH_RADIUS_M && currentHeading !== null) {
+      els.status.innerHTML = `<strong>${nearest.point.name}</strong> nearby (${Math.round(nearest.dist)}m)`;
+      els.headingGuide.textContent = `Turn to face ~${Math.round(nearest.point.heading)}° (currently ${Math.round(currentHeading)}°)`;
+      els.headingGuide.style.display = 'block';
+    } else {
+      els.headingGuide.style.display = 'none';
+      els.status.textContent = currentPos
+        ? 'No tagged view nearby — walk toward a marked location'
+        : 'Locating you…';
+    }
+  }
+}
+
+setInterval(requestTick, 800);
+
+/* =========================================================================
+   SNAP TO IDENTIFY (Multimodal Image + Text Semantic CLIP Engine)
+   ========================================================================= */
+
+function cosineSimilarity(a, b) {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+  return denom === 0 ? 0 : dot / denom;
+}
+
+function showModelBanner(text, pct = null) {
+  els.modelBanner.style.display = 'flex';
+  els.modelBannerText.textContent = text;
+  if (pct !== null) {
+    els.modelProgressFill.style.width = pct + '%';
+  } else {
+    els.modelProgressFill.style.width = '100%';
+  }
+}
+
+function hideModelBanner() {
+  els.modelBanner.style.display = 'none';
+}
+
+async function initClipModel() {
+  if (isModelReady || isModelLoading) return;
+  isModelLoading = true;
+
+  try {
+    const { AutoProcessor, CLIPVisionModelWithProjection, AutoTokenizer, CLIPTextModelWithProjection, RawImage, env } =
+      await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+    
+    env.allowLocalModels = false;
+    env.useBrowserCache = true; // Cached permanently in browser IndexedDB/Cache API
+    RawImageClass = RawImage;
+
+    // Check if embeddings are already in cache
+    const cachedEmbeddings = localStorage.getItem(CLIP_CACHE_KEY);
+    const cachedTextEmbeddings = localStorage.getItem(CLIP_TEXT_CACHE_KEY);
+    if (!cachedEmbeddings || !cachedTextEmbeddings) {
+      showModelBanner('Downloading multimodal AI vision & text models (one-time)…', 15);
+    }
+
+    processor = await AutoProcessor.from_pretrained('Xenova/clip-vit-base-patch32');
+    visionModel = await CLIPVisionModelWithProjection.from_pretrained('Xenova/clip-vit-base-patch32', {
+      progress_callback: (p) => {
+        if (p.status === 'progress' && p.total) {
+          const pct = Math.round((p.loaded / p.total) * 45) + 15;
+          showModelBanner(`Downloading vision model: ${pct}%`, pct);
+        }
+      }
+    });
+
+    tokenizer = await AutoTokenizer.from_pretrained('Xenova/clip-vit-base-patch32');
+    textModel = await CLIPTextModelWithProjection.from_pretrained('Xenova/clip-vit-base-patch32', {
+      progress_callback: (p) => {
+        if (p.status === 'progress' && p.total) {
+          const pct = Math.round((p.loaded / p.total) * 30) + 60;
+          showModelBanner(`Downloading semantic language model: ${pct}%`, pct);
+        }
+      }
+    });
+
+    // Check / compute reference image & text embeddings
+    await loadOrComputeReferenceEmbeddings();
+    hideModelBanner();
+    isModelReady = true;
+
+    // Enable shutter button and update pill
+    if (currentMode === 'snap') {
+      els.snapStatusPill.textContent = 'Tap shutter to identify';
+      els.shutterBtn.disabled = false;
+    }
+  } catch (err) {
+    console.error('Model initialization error:', err);
+    showModelBanner('Could not load AI model: ' + err.message, 0);
+    els.snapStatusPill.textContent = 'AI model error: ' + err.message;
+    setTimeout(hideModelBanner, 5000);
+  } finally {
+    isModelLoading = false;
+  }
+}
+
+async function loadOrComputeReferenceEmbeddings() {
+  const cached = localStorage.getItem(CLIP_CACHE_KEY);
+  const cachedText = localStorage.getItem(CLIP_TEXT_CACHE_KEY);
+
+  let needComputeImages = true;
+  let needComputeText = true;
+
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length === points.length && parsed[0]?.point?.photoUrl === points[0]?.photoUrl) {
+        referenceEmbeddings = parsed.map(item => ({
+          point: item.point,
+          embedding: new Float32Array(item.embedding)
+        }));
+        needComputeImages = false;
+        console.log('Loaded reference image embeddings for', referenceEmbeddings.length, 'photos from cache.');
+      }
+    } catch (e) {
+      console.warn('Invalid image embeddings cache, recomputing...', e);
+    }
+  }
+
+  if (cachedText) {
+    try {
+      const parsedText = JSON.parse(cachedText);
+      const keys = Object.keys(LOCATION_DESCRIPTIONS);
+      if (keys.every(k => parsedText[k])) {
+        textEmbeddings = {};
+        for (const k of keys) {
+          textEmbeddings[k] = new Float32Array(parsedText[k]);
+        }
+        needComputeText = false;
+        console.log('Loaded semantic text embeddings for', keys.length, 'locations from cache.');
+      }
+    } catch (e) {
+      console.warn('Invalid text embeddings cache, recomputing...', e);
+    }
+  }
+
+  // Compute reference image embeddings if needed
+  if (needComputeImages) {
+    showModelBanner('Indexing tagged photos for visual matching…', 85);
+    referenceEmbeddings = [];
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      const pct = 85 + Math.round(((i + 1) / points.length) * 10);
+      showModelBanner(`Indexing photo ${i + 1}/${points.length} (${p.year})…`, pct);
+      const emb = await extractImageEmbedding(p.photoUrl);
+      referenceEmbeddings.push({ point: p, embedding: emb });
+    }
+    const serialized = referenceEmbeddings.map(item => ({
+      point: item.point,
+      embedding: Array.from(item.embedding)
+    }));
+    localStorage.setItem(CLIP_CACHE_KEY, JSON.stringify(serialized));
+    console.log('Computed and cached reference image embeddings for', referenceEmbeddings.length, 'photos.');
+  }
+
+  // Compute semantic text embeddings if needed
+  if (needComputeText) {
+    showModelBanner('Generating semantic place embeddings for tiebreaker…', 95);
+    textEmbeddings = {};
+    const serializedText = {};
+    for (const [locKey, desc] of Object.entries(LOCATION_DESCRIPTIONS)) {
+      const textEmb = await extractTextEmbedding(desc);
+      textEmbeddings[locKey] = textEmb;
+      serializedText[locKey] = Array.from(textEmb);
+    }
+    localStorage.setItem(CLIP_TEXT_CACHE_KEY, JSON.stringify(serializedText));
+    console.log('Computed and cached semantic text embeddings for all locations.');
+  }
+}
+
+async function extractImageEmbedding(imageSourceUrlOrDataUrl) {
+  let inputUrl = imageSourceUrlOrDataUrl;
+  if (typeof imageSourceUrlOrDataUrl !== 'string') {
+    if (imageSourceUrlOrDataUrl instanceof HTMLCanvasElement || (imageSourceUrlOrDataUrl && typeof imageSourceUrlOrDataUrl.toDataURL === 'function')) {
+      inputUrl = imageSourceUrlOrDataUrl.toDataURL('image/jpeg', 0.85);
+    } else if (imageSourceUrlOrDataUrl instanceof Blob) {
+      inputUrl = URL.createObjectURL(imageSourceUrlOrDataUrl);
+    } else {
+      throw new Error('Unsupported image input type for embedding extraction: ' + typeof imageSourceUrlOrDataUrl);
+    }
+  }
+
+  const image = await RawImageClass.fromURL(inputUrl);
+  const image_inputs = await processor(image);
+  const { image_embeds } = await visionModel(image_inputs);
+  return new Float32Array(image_embeds.data);
+}
+
+async function extractTextEmbedding(textString) {
+  const text_inputs = await tokenizer(textString, { padding: true, truncation: true });
+  const { text_embeds } = await textModel(text_inputs);
+  return new Float32Array(text_embeds.data);
+}
+
+// Shutter Click Handler
+els.shutterBtn.addEventListener('click', captureAndIdentify);
+
+async function captureAndIdentify() {
+  if (!visionModel || !processor || !isModelReady) {
+    els.snapStatusPill.textContent = 'Still loading vision model, please wait…';
+    await initClipModel();
+    if (!visionModel || !processor) {
+      alert('Vision model is still preparing. Please try again in a few seconds.');
+      return;
+    }
+  }
+
+  // Flash animation
+  els.snapFlash.style.opacity = '0.85';
+  setTimeout(() => { els.snapFlash.style.opacity = '0'; }, 120);
+
+  // Ensure camera is playing
+  if (els.camera.paused || !els.camera.srcObject) {
+    await startCamera().catch(e => console.warn(e));
+  }
+
+  // Capture current camera video frame onto an offscreen canvas
+  const canvas = document.createElement('canvas');
+  const vw = els.camera.videoWidth || els.camera.clientWidth || 640;
+  const vh = els.camera.videoHeight || els.camera.clientHeight || 480;
+  canvas.width = vw;
+  canvas.height = vh;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(els.camera, 0, 0, vw, vh);
+
+  console.log('captured frame size:', canvas.width, canvas.height, 'video ready state:', els.camera.readyState, els.camera.videoWidth, els.camera.videoHeight);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+  showModelBanner('Matching photo against local archives…', null);
+  els.shutterBtn.disabled = true;
+
+  try {
+    const queryEmbedding = await extractImageEmbedding(dataUrl);
+    
+    // 1. DIAGNOSTIC LOG: Raw similarity against every photo in library
+    const rawPhotoScores = referenceEmbeddings.map((ref) => {
+      const sim = cosineSimilarity(queryEmbedding, ref.embedding);
+      return [ref.point.name + ` (${ref.point.year})`, Number(sim.toFixed(3))];
+    });
+    console.log('scores (raw image-to-image for all 12 photos):', rawPhotoScores);
+
+    // 2. MULTIMODAL MATCHING: Group by location & fuse image + semantic text scores
+    const locationGroups = {};
+    referenceEmbeddings.forEach(ref => {
+      const locKey = ref.point.id.replace(/-old|-current$/, '');
+      if (!locationGroups[locKey]) {
+        locationGroups[locKey] = {
+          locKey,
+          name: ref.point.name.replace(/ building.*| entrance.*/i, ''),
+          refs: []
+        };
+      }
+      locationGroups[locKey].refs.push(ref);
+    });
+
+    let bestLocation = null;
+    let bestMatchedPoint = null;
+    let bestOverallSimilarity = -1;
+
+    const scoresSummary = [];
+
+    for (const locKey in locationGroups) {
+      const group = locationGroups[locKey];
+      
+      // Best visual image-to-image score among this location's reference angles
+      let groupBestImgSim = -1;
+      let groupBestPoint = null;
+      for (const ref of group.refs) {
+        const sim = cosineSimilarity(queryEmbedding, ref.embedding);
+        if (sim > groupBestImgSim) {
+          groupBestImgSim = sim;
+          groupBestPoint = ref.point;
+        }
+      }
+
+      // Semantic image-to-text score
+      let textSim = 0;
+      if (textEmbeddings[locKey]) {
+        textSim = cosineSimilarity(queryEmbedding, textEmbeddings[locKey]);
+      }
+
+      // Weighted multimodal fusion score: 55% visual photo similarity + 45% semantic text description
+      const combinedScore = (0.55 * groupBestImgSim) + (0.45 * textSim);
+
+      scoresSummary.push({
+        location: group.name,
+        locKey: locKey,
+        maxVisualScore: Number(groupBestImgSim.toFixed(3)),
+        textSemanticScore: Number(textSim.toFixed(3)),
+        fusedScore: Number(combinedScore.toFixed(3))
+      });
+
+      if (combinedScore > bestOverallSimilarity) {
+        bestOverallSimilarity = combinedScore;
+        bestMatchedPoint = groupBestPoint;
+        bestLocation = group;
+      }
+    }
+
+    // DIAGNOSTIC LOGS:
+    console.log('scores (per-location summary):', scoresSummary.map(s => [s.location, s.fusedScore.toFixed(3)]));
+    console.log('scores breakdown (visual vs semantic):', scoresSummary);
+    console.log('Best match candidate:', bestMatchedPoint?.name, 'fused similarity:', bestOverallSimilarity.toFixed(3), 'threshold:', SNAP_MATCH_THRESHOLD);
+
+    hideModelBanner();
+
+    if (bestMatchedPoint && bestOverallSimilarity >= SNAP_MATCH_THRESHOLD) {
+      // Find the OLDEST era point for this location (never default to present-day)
+      const locKey = bestMatchedPoint.id.replace(/-old|-current$/, '');
+      const locPoints = points.filter(p => p.id.replace(/-old|-current$/, '') === locKey || (p.lat === bestMatchedPoint.lat && p.lon === bestMatchedPoint.lon));
+      const oldestPoint = locPoints.reduce((min, p) => p.year < min.year ? p : min, locPoints[0]);
+      
+      triggerTimePortalFX();
+      presentSnapResult(oldestPoint, bestOverallSimilarity);
+    } else {
+      presentSnapResult(null, bestOverallSimilarity);
+    }
+  } catch (err) {
+    console.error('Identification error:', err);
+    alert('Failed to process image: ' + err.message);
+  } finally {
+    els.shutterBtn.disabled = false;
+  }
+}
+
+function presentSnapResult(point, similarity) {
+  const isMatch = similarity >= SNAP_MATCH_THRESHOLD && point !== null;
+  const pct = Math.round(similarity * 100);
+
+  if (isMatch && point) {
+    els.snapResultTag.className = 'result-tag tag-match';
+    els.snapResultTag.textContent = 'Visual Match Found';
+    els.snapScoreBadge.textContent = `${pct}% Match`;
+    els.snapResultTitle.textContent = point.name;
+    els.snapResultDesc.textContent = point.caption || 'Tagged historical landmark in Fontainhas.';
+
+    // Setup Old vs New Comparison (defaults to oldest era)
+    renderSnapComparison(point);
+
+    els.snapActionAr.textContent = 'View in AR Scan';
+    els.snapActionAr.onclick = () => {
+      els.snapModal.classList.remove('visible');
+      activeEra = point.year;
+      switchMode('scan');
+    };
+    els.snapActionClose.textContent = 'Snap Another';
+    els.snapActionClose.onclick = () => els.snapModal.classList.remove('visible');
+  } else {
+    els.snapResultTag.className = 'result-tag tag-nomatch';
+    els.snapResultTag.textContent = 'No Match';
+    els.snapScoreBadge.textContent = `${pct}% Similarity`;
+    els.snapResultTitle.textContent = 'Place Not Tagged Yet';
+    els.snapResultDesc.textContent = 'No matching historical reference photo found in the local archive for this view. Explore our catalog or try another angle.';
+    
+    els.snapCompBox.style.display = 'none';
+
+    els.snapActionAr.textContent = 'Browse Catalog';
+    els.snapActionAr.onclick = () => {
+      els.snapModal.classList.remove('visible');
+      switchMode('browse');
+    };
+    els.snapActionClose.textContent = 'Try Again';
+    els.snapActionClose.onclick = () => els.snapModal.classList.remove('visible');
+  }
+
+  els.snapModal.classList.add('visible');
+}
+
+function renderSnapComparison(matchedPoint) {
+  els.snapCompBox.style.display = 'flex';
+  els.snapCompTabs.innerHTML = '';
+
+  // Find all era points corresponding to this location and sort chronologically
+  const locKey = matchedPoint.id.replace(/-old|-current$/, '');
+  const relatedPoints = points.filter(p => p.id.replace(/-old|-current$/, '') === locKey || (p.lat === matchedPoint.lat && p.lon === matchedPoint.lon));
+  const sorted = relatedPoints.sort((a, b) => a.year - b.year);
+  const oldestPoint = sorted[0];
+
+  sorted.forEach((p) => {
+    const tabBtn = document.createElement('button');
+    // Default active tab is ALWAYS the OLDEST era
+    tabBtn.className = 'comp-tab-btn' + (p.id === oldestPoint.id ? ' active' : '');
+    tabBtn.textContent = `${p.year} View`;
+    tabBtn.onclick = () => {
+      document.querySelectorAll('.comp-tab-btn').forEach(b => b.classList.remove('active'));
+      tabBtn.classList.add('active');
+      els.snapCompImg.src = p.photoUrl;
+      els.snapResultDesc.textContent = p.caption || '';
+    };
+    els.snapCompTabs.appendChild(tabBtn);
+  });
+
+  // Display oldest photo directly with no flash of current-day version
+  els.snapCompImg.src = oldestPoint.photoUrl;
+  els.snapResultDesc.textContent = oldestPoint.caption || '';
+}
+
+/* =========================================================================
+   BROWSE MODE (Old vs New Comparison Catalog)
+   ========================================================================= */
+
+function renderBrowseCatalog() {
+  els.browseContainer.innerHTML = '';
+  
+  // Group points by location key
+  const groups = {};
+  points.forEach(p => {
+    const locKey = p.id.replace(/-old|-current$/, '');
+    if (!groups[locKey]) groups[locKey] = [];
+    groups[locKey].push(p);
+  });
+
+  Object.entries(groups).forEach(([locKey, groupPoints]) => {
+    const sorted = groupPoints.sort((a, b) => a.year - b.year);
+    const card = document.createElement('div');
+    card.className = 'location-card';
+
+    // Always start cards on the OLDEST historical photo
+    let currentCardPoint = sorted[0];
+
+    const media = document.createElement('div');
+    media.className = 'loc-card-media';
+    const img = document.createElement('img');
+    img.src = currentCardPoint.photoUrl;
+    media.appendChild(img);
+
+    const body = document.createElement('div');
+    body.className = 'loc-card-body';
+
+    const title = document.createElement('h3');
+    title.className = 'loc-title';
+    title.textContent = currentCardPoint.name.replace(/ building.*| entrance.*/i, '');
+
+    const tabs = document.createElement('div');
+    tabs.className = 'comparison-tabs';
+    sorted.forEach(p => {
+      const tab = document.createElement('button');
+      tab.className = 'comp-tab-btn' + (p.id === currentCardPoint.id ? ' active' : '');
+      tab.textContent = `${p.year} (${p.id.includes('old') ? 'Historical' : 'Current'})`;
+      tab.onclick = () => {
+        tabs.querySelectorAll('.comp-tab-btn').forEach(b => b.classList.remove('active'));
+        tab.classList.add('active');
+        img.src = p.photoUrl;
+        caption.textContent = p.caption;
+      };
+      tabs.appendChild(tab);
+    });
+
+    const caption = document.createElement('p');
+    caption.className = 'loc-caption';
+    caption.textContent = currentCardPoint.caption;
+
+    const meta = document.createElement('div');
+    meta.className = 'loc-meta';
+    meta.innerHTML = `<span>GPS: ${currentCardPoint.lat}, ${currentCardPoint.lon}</span>`;
+
+    const arBtn = document.createElement('button');
+    arBtn.className = 'btn-primary';
+    arBtn.style.marginTop = '4px';
+    arBtn.textContent = 'Open in AR Scan';
+    arBtn.onclick = () => {
+      activeEra = currentCardPoint.year;
+      switchMode('scan');
+    };
+
+    body.appendChild(title);
+    body.appendChild(tabs);
+    body.appendChild(caption);
+    body.appendChild(meta);
+    body.appendChild(arBtn);
+
+    card.appendChild(media);
+    card.appendChild(body);
+    els.browseContainer.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
