@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["points"],
+  "properties": {
+    "points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "lat", "lon", "heading", "year", "photoUrl", "caption"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the location point"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the location"
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "description": "Latitude coordinate"
+          },
+          "lon": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "description": "Longitude coordinate"
+          },
+          "heading": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 360,
+            "description": "Heading/direction in degrees"
+          },
+          "year": {
+            "type": "number",
+            "description": "Year of the photo"
+          },
+          "photoUrl": {
+            "type": "string",
+            "description": "URL to the photo file"
+          },
+          "caption": {
+            "type": "string",
+            "description": "Description/caption for the location"
+          },
+          "narration": {
+            "type": "string",
+            "description": "Optional narration text for voice synthesis"
+          },
+          "locKey": {
+            "type": "string",
+            "description": "Optional location key for grouping related points"
+          }
+        }
+      }
+    }
+  }
+}

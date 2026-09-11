@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "validate": "node validate-points.js",
+    "predeploy": "npm run validate"
+  },
   "dependencies": {
     "canvas": "^3.2.3"
   }

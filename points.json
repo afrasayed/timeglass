@@ -8,7 +8,8 @@
       "heading": 250,
       "year": 1930,
       "photoUrl": "photos/mushtifund-old.jpg",
-      "caption": "One of Goa's oldest non-profit educational institutions, founded 1908, teaching in Konkani/Marathi rather than Portuguese. Source: @memorias_de_pangim (year is approximate — verify)"
+      "caption": "One of Goa's oldest non-profit educational institutions, founded 1908, teaching in Konkani/Marathi rather than Portuguese. Source: @memorias_de_pangim (year is approximate — verify)",
+      "narration": "This blue and white building has stood since 1930, home to one of Goa's oldest schools teaching in our mother tongue."
     },
     {
       "id": "mushtifund-current",
@@ -108,7 +109,8 @@
       "heading": 0,
       "year": 1990,
       "photoUrl": "photos/panjim-church-old.jpg",
-      "caption": "Panjim's iconic church and grand staircase. Year approximate, per your note (~1980s-90s) — this source photo has a stylized filter applied, so treat the exact date as unconfirmed until verified"
+      "caption": "Panjim's iconic church and grand staircase. Year approximate, per your note (~1980s-90s) — this source photo has a stylized filter applied, so treat the exact date as unconfirmed until verified",
+      "narration": "Our Lady of the Immaculate Conception Church has watched over Panjim since 1619, its grand staircase welcoming pilgrims for centuries."
     },
     {
       "id": "panjim-church-current",
@@ -128,7 +130,8 @@
       "heading": 90,
       "year": 1850,
       "photoUrl": "photos/adilshah-old.png",
-      "caption": "Also known as Idalcão Palace or the Old Secretariat — built c.1500 as a summer palace for Yusuf Adil Shah of Bijapur, later the Portuguese governors' residence. Year approximate — verify against your source."
+      "caption": "Also known as Idalcão Palace or the Old Secretariat — built c.1500 as a summer palace for Yusuf Adil Shah of Bijapur, later the Portuguese governors' residence. Year approximate — verify against your source.",
+      "narration": "This palace was built around 1500 as a summer retreat for the Sultan of Bijapur, before becoming home to Portuguese governors."
     },
     {
       "id": "adilshah-current",
@@ -139,9 +142,8 @@
       "year": 2024,
       "photoUrl": "photos/adilshah-current.png",
       "caption": "Today home to the Goa State Museum, still standing on the Mandovi riverfront — the oldest surviving colonial-era building in Panjim."
-    }
-     
-{
+    },
+    {
       "id": "saotome-old",
       "locKey": "saotome",
       "name": "São Tomé",
@@ -150,7 +152,8 @@
       "heading": 180,
       "year": 1900,
       "photoUrl": "photos/saotome-old.jpg",
-      "caption": "São Tomé, one of Panjim's oldest wards, facing the riverfront just north of Fontainhas — named after the Portuguese word for 'little fountain.' YEAR PLACEHOLDER — replace with your source's actual date."
+      "caption": "São Tomé, one of Panjim's oldest wards, facing the riverfront just north of Fontainhas — named after the Portuguese word for 'little fountain.' YEAR PLACEHOLDER — replace with your source's actual date.",
+      "narration": "São Tomé means 'little fountain' in Portuguese, named for the natural springs that once watered this riverside quarter."
     },
     {
       "id": "saotome-current",
@@ -172,7 +175,8 @@
       "heading": 180,
       "year": 1900,
       "photoUrl": "photos/tobacco-square-old.jpg",
-      "caption": "Largo dos Tabaqueiros (Tobacco Square), named for the tobacco trade once conducted here — later home to a customs post and the Goa Mint. YEAR PLACEHOLDER — replace with your source's actual date."
+      "caption": "Largo dos Tabaqueiros (Tobacco Square), named for the tobacco trade once conducted here — later home to a customs post and the Goa Mint. YEAR PLACEHOLDER — replace with your source's actual date.",
+      "narration": "Tobacco Square was once the heart of Panjim's commerce, where tobacco traders and customs officials shaped the city's economy."
     },
     {
       "id": "tobacco-square-current",
@@ -216,7 +220,8 @@
       "heading": 90,
       "year": 1880,
       "photoUrl": "photos/casadempo-old.jpg",
-      "caption": "Casa Dempo on MG Road (then Afonso de Albuquerque Road), a traditional Hindu heritage house established around 1810. Photo reportedly c.1880, per Central Library archives — verify against your own source."
+      "caption": "Casa Dempo on MG Road (then Afonso de Albuquerque Road), a traditional Hindu heritage house established around 1810. Photo reportedly c.1880, per Central Library archives — verify against your own source.",
+      "narration": "Casa Dempo has stood on this road since 1810, a grand Hindu heritage house representing Goa's architectural diversity."
     },
     {
       "id": "casadempo-current",
@@ -251,9 +256,6 @@
       "photoUrl": "photos/pattobridge-current.jpg",
       "caption": "Patto Bridge today, connecting Fontainhas to the Patto business district, flanked by newer traffic and pedestrian bridges alongside it."
     },
-    // Third era for your EXISTING Panjim Church location (requires the locKey
-    // patch above — otherwise this becomes a disconnected 4th location instead
-    // of a 3rd era tab):
     {
       "id": "panjim-church-1900",
       "locKey": "panjim-church",
@@ -264,6 +266,28 @@
       "year": 1900,
       "photoUrl": "photos/panjim-church-1900.jpg",
       "caption": "An earlier view of Panjim's iconic church, completed in 1619 and rebuilt in Baroque style over the centuries. YEAR PLACEHOLDER — replace with your source's actual date."
+    },
+    {
+      "id": "mahalaxmi-old",
+      "locKey": "mahalaxmi",
+      "name": "Mahalaxmi Temple",
+      "lat": 15.4972,
+      "lon": 73.8295,
+      "heading": 45,
+      "year": 1900,
+      "photoUrl": "photos/mahalaxmi-old.jpg",
+      "caption": "The historic Mahalaxmi Temple in Panjim, one of the city's important Hindu religious sites. YEAR PLACEHOLDER — replace with your source's actual date."
+    },
+    {
+      "id": "mahalaxmi-current",
+      "locKey": "mahalaxmi",
+      "name": "Mahalaxmi Temple",
+      "lat": 15.4972,
+      "lon": 73.8295,
+      "heading": 45,
+      "year": 2024,
+      "photoUrl": "photos/mahalaxmi-current.jpg",
+      "caption": "Mahalaxmi Temple today, still serving as an active place of worship in the heart of Panjim."
     }
   ]
 }

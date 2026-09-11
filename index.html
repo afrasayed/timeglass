@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Timeglass</title>
+<link rel="manifest" href="manifest.json">
 <style>
   :root {
     --ink: #f4efe4;
@@ -341,6 +342,12 @@
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; font-size: 14px;
   }
+  #mute-toggle-btn {
+    background: var(--panel); border: 1px solid var(--panel-border);
+    color: var(--ink-dim); border-radius: 50%; width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 14px;
+  }
 
   /* Scan View Specifics */
   #scan-bottom-bar {
@@ -657,6 +664,8 @@
     </div>
     <div id="status-right">
       <button id="debug-toggle-btn" title="Field Calibration HUD">⚙</button>
+      <button id="mute-toggle-btn" title="Toggle Narration">🔊</button>
+      <div id="online-status" style="font-size:12px; color:var(--amber);">📡 Online</div>
       <div id="year-badge"></div>
     </div>
   </div>
@@ -682,8 +691,10 @@
     <div class="hud-actions">
       <button class="hud-btn" id="hud-copy-btn">📋 Copy GPS & Heading (JSON)</button>
       <button class="hud-btn" id="hud-sim-btn">📍 Simulate Goa Site</button>
+      <button class="hud-btn" id="hud-precache-btn">💾 Precache for Offline</button>
     </div>
     <div id="hud-copy-msg">✓ Copied current fix to clipboard!</div>
+    <div id="hud-precache-msg" style="color: #88d49e; font-size: 11px; display: none; text-align: center;"></div>
   </div>
 
   <!-- Scan Mode Chrome Bottom -->
@@ -755,6 +766,15 @@
   </div>
 
 <script type="module">
+/* ---------- Service Worker Registration ---------- */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    console.log('Service Worker registered:', reg);
+  }).catch(err => {
+    console.warn('Service Worker registration failed:', err);
+  });
+}
+
 /* ---------- config ---------- */
 const MATCH_RADIUS_M = 60;          // how close you must be to a point, in meters (Scan mode)
 const HEADING_CONE_DEG = 70;        // how far off-heading still counts as a match (Scan mode)
@@ -777,6 +797,8 @@ let tickQueued = false;
 let isSensorsStarted = false;
 let isCameraStarted = false;
 let lastMatchedLocationKey = null;
+let isNarrationMuted = false;
+let isServiceWorkerReady = false;
 
 // CLIP Transformers (Vision + Text) State
 let processor = null;
@@ -814,13 +836,17 @@ const els = {
   startError: document.getElementById('start-error'),
   debugHud: document.getElementById('debug-hud'),
   debugToggleBtn: document.getElementById('debug-toggle-btn'),
+  muteToggleBtn: document.getElementById('mute-toggle-btn'),
+  onlineStatus: document.getElementById('online-status'),
   hudGps: document.getElementById('hud-gps'),
   hudHeading: document.getElementById('hud-heading'),
   hudTarget: document.getElementById('hud-target'),
   hudMetrics: document.getElementById('hud-metrics'),
   hudCopyBtn: document.getElementById('hud-copy-btn'),
   hudSimBtn: document.getElementById('hud-sim-btn'),
+  hudPrecacheBtn: document.getElementById('hud-precache-btn'),
   hudCopyMsg: document.getElementById('hud-copy-msg'),
+  hudPrecacheMsg: document.getElementById('hud-precache-msg'),
   statusBar: document.getElementById('status-bar'),
   scanBottomBar: document.getElementById('scan-bottom-bar'),
   snapView: document.getElementById('snap-view'),
@@ -848,6 +874,29 @@ const els = {
   snapFlash: document.getElementById('snap-flash'),
   particlesLayer: document.getElementById('fb-particles-layer'),
 };
+
+/* ---------- Online/Offline Status & Mute Toggle ---------- */
+function updateOnlineStatus() {
+  if (navigator.onLine) {
+    els.onlineStatus.textContent = isServiceWorkerReady ? '📴 Offline Ready' : '📡 Online';
+  } else {
+    els.onlineStatus.textContent = '📴 Offline';
+  }
+}
+
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// Listen for service worker activation
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    isServiceWorkerReady = true;
+    updateOnlineStatus();
+  });
+}
+
+// Initial status update
+updateOnlineStatus();
 
 /* ---------- Time Flashback Automatic Animation Engine (Pensieve Magic) ---------- */
 let isFlashbackPlaying = false;
@@ -903,6 +952,7 @@ function playTimeFlashback({
   era = null,
   locEras = null,
   hideEraInitially = false,
+  narration = null,
   onSettle = null,
   onComplete = null
 } = {}) {
@@ -952,6 +1002,32 @@ function playTimeFlashback({
     els.scanCompareBtn.classList.add('revealed');
     els.scanBottomBar.classList.remove('flashback-ui-pending');
     els.scanBottomBar.classList.add('flashback-ui-reveal');
+
+    // Ghost Guide narration
+    if (!isNarrationMuted && 'speechSynthesis' in window) {
+      speechSynthesis.cancel(); // Cancel any in-progress utterance
+
+      const narrationText = narration || caption;
+      if (narrationText) {
+        const utterance = new SpeechSynthesisUtterance(narrationText);
+        utterance.pitch = 0.9;
+        utterance.rate = 0.95;
+
+        // Try to select a mature voice
+        const voices = speechSynthesis.getVoices();
+        const matureVoice = voices.find(voice =>
+          voice.name.includes('Male') ||
+          voice.name.includes('Female') ||
+          voice.name.includes('English') ||
+          voice.lang.startsWith('en')
+        );
+        if (matureVoice) {
+          utterance.voice = matureVoice;
+        }
+
+        speechSynthesis.speak(utterance);
+      }
+    }
   }, 845);
 
   // RESOLUTION (~1235ms): Complete flashback sequence
@@ -1053,6 +1129,55 @@ async function switchMode(mode) {
 els.startBtn.addEventListener('click', begin);
 els.debugToggleBtn.addEventListener('click', () => {
   els.debugHud.classList.toggle('visible');
+});
+
+// Mute toggle
+els.muteToggleBtn.addEventListener('click', () => {
+  isNarrationMuted = !isNarrationMuted;
+  els.muteToggleBtn.textContent = isNarrationMuted ? '🔇' : '🔊';
+  if (isNarrationMuted) {
+    speechSynthesis.cancel();
+  }
+});
+
+// Precache for Offline button
+els.hudPrecacheBtn.addEventListener('click', async () => {
+  els.hudPrecacheMsg.style.display = 'block';
+  els.hudPrecacheMsg.textContent = 'Precaching photos and models...';
+
+  try {
+    // Ensure points are loaded
+    if (points.length === 0) {
+      await loadPoints();
+    }
+
+    // Cache all photos
+    const photoUrls = points.map(p => p.photoUrl).filter(url => url);
+    let cachedCount = 0;
+
+    for (const url of photoUrls) {
+      try {
+        await fetch(url);
+        cachedCount++;
+        els.hudPrecacheMsg.textContent = `Cached ${cachedCount}/${photoUrls.length} photos...`;
+      } catch (err) {
+        console.warn('Failed to cache photo:', url, err);
+      }
+    }
+
+    // Trigger CLIP model loading to cache model files
+    if (!isModelReady) {
+      els.hudPrecacheMsg.textContent = 'Loading AI vision model...';
+      await initClipModel();
+    }
+
+    els.hudPrecacheMsg.textContent = `✓ Precached ${cachedCount} photos and AI model`;
+    setTimeout(() => { els.hudPrecacheMsg.style.display = 'none'; }, 3000);
+  } catch (err) {
+    console.error('Precache error:', err);
+    els.hudPrecacheMsg.textContent = 'Precache failed: ' + err.message;
+    setTimeout(() => { els.hudPrecacheMsg.style.display = 'none'; }, 3000);
+  }
 });
 
 els.hudSimBtn.addEventListener('click', () => {
@@ -1331,7 +1456,8 @@ function findBestMatch() {
       caption: oldestPoint.caption,
       era: oldestPoint.year,
       locEras: locEras,
-      hideEraInitially: true
+      hideEraInitially: true,
+      narration: oldestPoint.narration
     });
   }
 
@@ -1738,6 +1864,7 @@ async function captureAndIdentify() {
         era: oldestPoint.year,
         locEras: locEras,
         hideEraInitially: false,
+        narration: oldestPoint.narration,
         onSettle: () => {
           renderSnapComparison(oldestPoint);
         },

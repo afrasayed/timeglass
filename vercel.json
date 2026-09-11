@@ -1,0 +1,4 @@
+{
+  "buildCommand": "npm run validate && echo 'Build validation passed'",
+  "installCommand": "npm install"
+}
