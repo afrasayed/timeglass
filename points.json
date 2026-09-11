@@ -119,6 +119,151 @@
       "year": 2024,
       "photoUrl": "photos/panjim-church-current.jpg",
       "caption": "The same church and staircase today, largely unchanged in form since it was completed in 1619 and rebuilt in Baroque style over the centuries"
+    },
+    {
+      "id": "adilshah-old",
+      "name": "Adil Shah Palace",
+      "lat": 15.4995,
+      "lon": 73.8298,
+      "heading": 90,
+      "year": 1850,
+      "photoUrl": "photos/adilshah-old.png",
+      "caption": "Also known as Idalcão Palace or the Old Secretariat — built c.1500 as a summer palace for Yusuf Adil Shah of Bijapur, later the Portuguese governors' residence. Year approximate — verify against your source."
+    },
+    {
+      "id": "adilshah-current",
+      "name": "Adil Shah Palace",
+      "lat": 15.4995,
+      "lon": 73.8298,
+      "heading": 90,
+      "year": 2024,
+      "photoUrl": "photos/adilshah-current.png",
+      "caption": "Today home to the Goa State Museum, still standing on the Mandovi riverfront — the oldest surviving colonial-era building in Panjim."
+    }
+     
+{
+      "id": "saotome-old",
+      "locKey": "saotome",
+      "name": "São Tomé",
+      "lat": 15.4998,
+      "lon": 73.8290,
+      "heading": 180,
+      "year": 1900,
+      "photoUrl": "photos/saotome-old.jpg",
+      "caption": "São Tomé, one of Panjim's oldest wards, facing the riverfront just north of Fontainhas — named after the Portuguese word for 'little fountain.' YEAR PLACEHOLDER — replace with your source's actual date."
+    },
+    {
+      "id": "saotome-current",
+      "locKey": "saotome",
+      "name": "São Tomé",
+      "lat": 15.4998,
+      "lon": 73.8290,
+      "heading": 180,
+      "year": 2024,
+      "photoUrl": "photos/saotome-current.jpg",
+      "caption": "São Tomé today — still one of the quieter heritage quarters bordering Fontainhas, with its mix of Hindu and Portuguese-era houses."
+    },
+    {
+      "id": "tobacco-square-old",
+      "locKey": "tobacco-square",
+      "name": "Tobacco Square",
+      "lat": 15.4993,
+      "lon": 73.8292,
+      "heading": 180,
+      "year": 1900,
+      "photoUrl": "photos/tobacco-square-old.jpg",
+      "caption": "Largo dos Tabaqueiros (Tobacco Square), named for the tobacco trade once conducted here — later home to a customs post and the Goa Mint. YEAR PLACEHOLDER — replace with your source's actual date."
+    },
+    {
+      "id": "tobacco-square-current",
+      "locKey": "tobacco-square",
+      "name": "Tobacco Square",
+      "lat": 15.4993,
+      "lon": 73.8292,
+      "heading": 180,
+      "year": 2024,
+      "photoUrl": "photos/tobacco-square-current.jpg",
+      "caption": "Today the square houses the General Post Office and the São Tomé Chapel, at the edge of the Fontainhas heritage walk."
+    },
+    {
+      "id": "azadmaidan-old",
+      "locKey": "azadmaidan",
+      "name": "Azad Maidan",
+      "lat": 15.4979,
+      "lon": 73.8286,
+      "heading": 0,
+      "year": 1910,
+      "photoUrl": "photos/azadmaidan-old.jpg",
+      "caption": "Originally Largo Afonso de Albuquerque (Praça de Sete Janelas), built 1843 with a domed monument to the Portuguese general. YEAR PLACEHOLDER — replace with your source's actual date."
+    },
+    {
+      "id": "azadmaidan-current",
+      "locKey": "azadmaidan",
+      "name": "Azad Maidan",
+      "lat": 15.4979,
+      "lon": 73.8286,
+      "heading": 0,
+      "year": 2024,
+      "photoUrl": "photos/azadmaidan-current.jpg",
+      "caption": "Renamed Azad Maidan ('Freedom Ground') after Goa's liberation — now home to the Martyrs' Memorial honoring Tristão de Bragança Cunha and 67 named freedom fighters."
+    },
+    {
+      "id": "casadempo-old",
+      "locKey": "casadempo",
+      "name": "Casa Dempo",
+      "lat": 15.4973,
+      "lon": 73.8283,
+      "heading": 90,
+      "year": 1880,
+      "photoUrl": "photos/casadempo-old.jpg",
+      "caption": "Casa Dempo on MG Road (then Afonso de Albuquerque Road), a traditional Hindu heritage house established around 1810. Photo reportedly c.1880, per Central Library archives — verify against your own source."
+    },
+    {
+      "id": "casadempo-current",
+      "locKey": "casadempo",
+      "name": "Casa Dempo",
+      "lat": 15.4973,
+      "lon": 73.8283,
+      "heading": 90,
+      "year": 2024,
+      "photoUrl": "photos/casadempo-current.jpg",
+      "caption": "Casa Dempo still stands on MG Road today, near the old Government Printing Press building."
+    },
+    {
+      "id": "pattobridge-old",
+      "locKey": "pattobridge",
+      "name": "Patto Bridge",
+      "lat": 15.4993,
+      "lon": 73.8322,
+      "heading": 90,
+      "year": 1900,
+      "photoUrl": "photos/pattobridge-old.jpg",
+      "caption": "Patto Bridge over Ourem Creek — the Panjim-side extension of the Ponte de Linhares causeway, built by Jesuits around 1632-34. YEAR PLACEHOLDER — replace with your source's actual date."
+    },
+    {
+      "id": "pattobridge-current",
+      "locKey": "pattobridge",
+      "name": "Patto Bridge",
+      "lat": 15.4993,
+      "lon": 73.8322,
+      "heading": 90,
+      "year": 2024,
+      "photoUrl": "photos/pattobridge-current.jpg",
+      "caption": "Patto Bridge today, connecting Fontainhas to the Patto business district, flanked by newer traffic and pedestrian bridges alongside it."
+    },
+    // Third era for your EXISTING Panjim Church location (requires the locKey
+    // patch above — otherwise this becomes a disconnected 4th location instead
+    // of a 3rd era tab):
+    {
+      "id": "panjim-church-1900",
+      "locKey": "panjim-church",
+      "name": "Panaji Church (Our Lady of the Immaculate Conception)",
+      "lat": 15.4989,
+      "lon": 73.8278,
+      "heading": 0,
+      "year": 1900,
+      "photoUrl": "photos/panjim-church-1900.jpg",
+      "caption": "An earlier view of Panjim's iconic church, completed in 1619 and rebuilt in Baroque style over the centuries. YEAR PLACEHOLDER — replace with your source's actual date."
     }
   ]
 }

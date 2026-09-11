@@ -34,10 +34,10 @@
     background: #000;
     display: block;
     transform-origin: center center;
-    transition: filter 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: filter 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   }
   #camera.flashback-cam {
-    animation: fbCameraTimeline 1.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: fbCameraTimeline 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
   @keyframes fbCameraTimeline {
     0% {
@@ -72,7 +72,7 @@
     overflow: hidden;
   }
   #time-flashback-fx.flashback-active {
-    animation: fbAuraPulse 1.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: fbAuraPulse 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
   @keyframes fbAuraPulse {
     0% {
@@ -114,7 +114,7 @@
     transform-origin: center center;
   }
   #time-flashback-fx.flashback-active .fb-mist-swirl {
-    animation: fbMistSwirl 1.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: fbMistSwirl 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
   @keyframes fbMistSwirl {
     0% {
@@ -149,7 +149,7 @@
     transform-origin: center center;
   }
   #time-flashback-fx.flashback-active .fb-vortex-inner {
-    animation: fbVortexPulse 1.8s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards;
+    animation: fbVortexPulse 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.05s forwards;
   }
   @keyframes fbVortexPulse {
     0% {
@@ -183,7 +183,7 @@
     box-shadow: 0 0 10px 2px rgba(255, 215, 145, 0.9), 0 0 20px 4px rgba(201, 146, 79, 0.45);
     opacity: 0;
     pointer-events: none;
-    animation: fbEmberDrift 1.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: fbEmberDrift 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
   @keyframes fbEmberDrift {
     0% {
@@ -192,15 +192,15 @@
     }
     22% {
       opacity: 0.95;
-      transform: translate3d(var(--dx1, 8px), -30px, 0) scale(1.25);
+      transform: translate3d(var(--dx1, 8px), -24px, 0) scale(1.25);
     }
     65% {
       opacity: 0.75;
-      transform: translate3d(var(--dx2, -10px), -80px, 0) scale(0.95);
+      transform: translate3d(var(--dx2, -10px), -65px, 0) scale(0.95);
     }
     100% {
       opacity: 0;
-      transform: translate3d(var(--dx3, 16px), -145px, 0) scale(0.2);
+      transform: translate3d(var(--dx3, 16px), -115px, 0) scale(0.2);
     }
   }
 
@@ -210,13 +210,13 @@
     width: 100%; height: 100%;
     object-fit: cover;
     opacity: 0;
-    transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
     pointer-events: none;
     z-index: 2;
     transform-origin: center center;
   }
   #overlay-photo.flashback-photo-settle {
-    animation: fbPhotoLanding 1.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: fbPhotoLanding 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
   @keyframes fbPhotoLanding {
     0% {
@@ -239,16 +239,16 @@
   /* Captions and Era buttons delayed entrance for flashback beat 4 */
   .flashback-ui-pending {
     opacity: 0 !important;
-    transform: translateY(16px) !important;
+    transform: translateY(14px) !important;
     pointer-events: none !important;
   }
   .flashback-ui-reveal {
-    animation: fbUiFadeIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+    animation: fbUiFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
   }
   @keyframes fbUiFadeIn {
     0% {
       opacity: 0;
-      transform: translateY(16px);
+      transform: translateY(14px);
     }
     100% {
       opacity: 1;
@@ -349,12 +349,53 @@
     padding-bottom: 12px; padding-top: 24px;
   }
   #caption {
-    font-size: 14px; color: var(--ink); min-height: 18px; line-height: 1.4;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    display: flex; flex-direction: column; gap: 8px;
+    min-height: 18px;
   }
-  #caption .src { color: var(--ink-dim); font-size: 12px; }
+  #scan-landmark-name {
+    font-family: Georgia, serif;
+    font-size: 20px; font-weight: 700; color: var(--ink);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+    letter-spacing: 0.3px;
+  }
+  #scan-landmark-desc {
+    font-size: 13.5px; color: var(--ink-dim); line-height: 1.45;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    display: none;
+  }
+  #scan-landmark-desc.revealed {
+    display: block;
+    animation: fbUiFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  #scan-landmark-desc .src { color: var(--ink-dim); font-size: 12px; }
 
-  #era-track { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  #scan-compare-btn {
+    align-self: flex-start;
+    padding: 10px 20px;
+    background: var(--amber); color: #1a1208;
+    border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.3px;
+    cursor: pointer;
+    box-shadow: 0 3px 14px var(--amber-glow);
+    transition: transform 0.1s ease, background 0.2s ease;
+    display: none; align-items: center; gap: 6px;
+  }
+  #scan-compare-btn.revealed {
+    display: flex;
+    animation: fbUiFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  #scan-compare-btn:active { transform: scale(0.96); background: var(--amber-dim); }
+
+  #era-track {
+    display: none; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none;
+  }
+  #era-track.hidden-initial {
+    display: none !important;
+  }
+  #era-track.revealed {
+    display: flex;
+    animation: fbUiFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
   #era-track::-webkit-scrollbar { display: none; }
   .era-btn {
     flex: none; padding: 7px 15px; border-radius: 999px;
@@ -423,6 +464,39 @@
     display: flex; flex-direction: column; align-items: center; gap: 10px;
     z-index: 20;
   }
+
+  /* Snap Mode Result Overlay Bar */
+  #snap-result-overlay {
+    position: absolute; bottom: 190px; left: 16px; right: 16px;
+    display: none; flex-direction: column; gap: 8px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.4) 25%, rgba(0,0,0,0.8));
+    padding: 12px; border-radius: 8px;
+    z-index: 19;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--panel-border);
+  }
+  #snap-result-overlay.visible {
+    display: flex;
+    animation: fbUiFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  #snap-result-name {
+    font-family: Georgia, serif;
+    font-size: 18px; font-weight: 700; color: var(--ink);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+    letter-spacing: 0.3px;
+  }
+  #snap-overlay-compare-btn {
+    align-self: flex-start;
+    padding: 10px 20px;
+    background: var(--amber); color: #1a1208;
+    border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.3px;
+    cursor: pointer;
+    box-shadow: 0 3px 14px var(--amber-glow);
+    transition: transform 0.1s ease, background 0.2s ease;
+  }
+  #snap-overlay-compare-btn:active { transform: scale(0.96); background: var(--amber-dim); }
   #snap-status-pill {
     padding: 6px 14px; border-radius: 999px;
     background: rgba(20, 17, 12, 0.88);
@@ -615,12 +689,17 @@
   <!-- Scan Mode Chrome Bottom -->
   <div class="chrome" id="scan-bottom-bar">
     <div id="caption"></div>
+    <button id="scan-compare-btn">Compare & Details</button>
     <div id="era-track"></div>
   </div>
 
   <!-- ----------------- Snap to Identify View ----------------- -->
   <div id="snap-view">
     <div id="snap-reticle"></div>
+    <div id="snap-result-overlay">
+      <div id="snap-result-name"></div>
+      <button id="snap-overlay-compare-btn">Compare & Details</button>
+    </div>
     <div id="snap-controls">
       <div id="snap-status-pill">Preparing camera…</div>
       <button id="shutter-btn" title="Snap to Identify" disabled></button>
@@ -642,6 +721,8 @@
       </div>
       <h3 id="snap-result-title" class="result-title">Mushtifund Saunstha</h3>
       <p id="snap-result-desc" class="result-desc">One of Goa's oldest educational institutions...</p>
+
+      <button class="btn-primary" id="snap-compare-btn" style="display:none;">Compare & Details</button>
 
       <div class="comparison-container" id="snap-comp-box">
         <div class="comparison-tabs" id="snap-comp-tabs"></div>
@@ -727,6 +808,7 @@ const els = {
   yearBadge: document.getElementById('year-badge'),
   caption: document.getElementById('caption'),
   eraTrack: document.getElementById('era-track'),
+  scanCompareBtn: document.getElementById('scan-compare-btn'),
   startScreen: document.getElementById('start-screen'),
   startBtn: document.getElementById('start-btn'),
   startError: document.getElementById('start-error'),
@@ -745,6 +827,9 @@ const els = {
   browseView: document.getElementById('browse-view'),
   shutterBtn: document.getElementById('shutter-btn'),
   snapStatusPill: document.getElementById('snap-status-pill'),
+  snapResultOverlay: document.getElementById('snap-result-overlay'),
+  snapResultName: document.getElementById('snap-result-name'),
+  snapOverlayCompareBtn: document.getElementById('snap-overlay-compare-btn'),
   snapModal: document.getElementById('snap-modal'),
   snapResultTag: document.getElementById('snap-result-tag'),
   snapScoreBadge: document.getElementById('snap-score-badge'),
@@ -753,6 +838,7 @@ const els = {
   snapCompBox: document.getElementById('snap-comp-box'),
   snapCompTabs: document.getElementById('snap-comp-tabs'),
   snapCompImg: document.getElementById('snap-comp-img'),
+  snapCompareBtn: document.getElementById('snap-compare-btn'),
   snapActionAr: document.getElementById('snap-action-ar'),
   snapActionClose: document.getElementById('snap-action-close'),
   modelBanner: document.getElementById('model-banner'),
@@ -794,7 +880,7 @@ function spawnFloatingEmbers() {
     const dx1 = Math.round(Math.random() * 24 - 12) + 'px';
     const dx2 = Math.round(Math.random() * 32 - 16) + 'px';
     const dx3 = Math.round(Math.random() * 40 - 20) + 'px';
-    const delay = i * 75; // Staggered delays
+    const delay = i * 50; // Staggered delays
 
     p.style.width = size + 'px';
     p.style.height = size + 'px';
@@ -816,6 +902,7 @@ function playTimeFlashback({
   caption = '',
   era = null,
   locEras = null,
+  hideEraInitially = false,
   onSettle = null,
   onComplete = null
 } = {}) {
@@ -844,29 +931,30 @@ function playTimeFlashback({
   els.camera.classList.add('flashback-cam');
   els.timeFlashbackFx.classList.add('flashback-active');
 
-  // BEAT 3 (~550ms): Historical photo smoothly materializes through the golden mist (oldest era)
+  // BEAT 3 (~360ms): Historical photo smoothly materializes through the golden mist (oldest era)
   flashbackTimerA = setTimeout(() => {
     if (!isFlashbackPlaying) return;
     els.photo.classList.add('flashback-photo-settle');
     if (typeof onSettle === 'function') onSettle();
-  }, 550);
+  }, 360);
 
-  // BEAT 4 (~1300ms): Caption and era buttons fade and float in LAST after photo has settled
+  // BEAT 4 (~845ms): Caption and Compare button fade and float in LAST after photo has settled
   flashbackTimerB = setTimeout(() => {
     if (!isFlashbackPlaying) return;
     if (era) {
       activeEra = era;
       els.yearBadge.textContent = era;
-      if (locEras) renderEraButtons(locEras);
+      if (locEras) renderEraButtons(locEras, true);
     }
     if (name) {
-      els.caption.innerHTML = `${name} <span class="src">— ${caption || ''}</span>`;
+      els.caption.innerHTML = `${name}`;
     }
+    els.scanCompareBtn.classList.add('revealed');
     els.scanBottomBar.classList.remove('flashback-ui-pending');
     els.scanBottomBar.classList.add('flashback-ui-reveal');
-  }, 1300);
+  }, 845);
 
-  // RESOLUTION (~1900ms): Complete flashback sequence
+  // RESOLUTION (~1235ms): Complete flashback sequence
   flashbackTimerDone = setTimeout(() => {
     isFlashbackPlaying = false;
     els.camera.classList.remove('flashback-cam');
@@ -876,7 +964,7 @@ function playTimeFlashback({
     els.photo.style.opacity = targetOpacity;
     if (els.particlesLayer) els.particlesLayer.innerHTML = '';
     if (typeof onComplete === 'function') onComplete();
-  }, 1900);
+  }, 1235);
 }
 
 /* ---------- Navigation & Mode Switcher ---------- */
@@ -909,7 +997,10 @@ async function switchMode(mode) {
     els.snapView.classList.remove('active-view');
     els.browseView.classList.remove('active-view');
     els.photo.style.display = 'block';
-    
+
+    // Hide snap overlay when leaving snap mode
+    els.snapResultOverlay.classList.remove('visible');
+
     // Start camera immediately
     startCamera().catch(e => console.warn(e));
     if (!isSensorsStarted) {
@@ -926,7 +1017,7 @@ async function switchMode(mode) {
     els.photo.style.opacity = '0';
     els.snapView.classList.add('active-view');
     els.browseView.classList.remove('active-view');
-    
+
     // PARALLEL STARTUP: 1. Start camera feed IMMEDIATELY (no blocking)
     startCamera().then(() => {
       if (isModelReady) {
@@ -950,6 +1041,10 @@ async function switchMode(mode) {
     els.photo.style.opacity = '0';
     els.snapView.classList.remove('active-view');
     els.browseView.classList.add('active-view');
+
+    // Hide snap overlay when leaving snap mode
+    els.snapResultOverlay.classList.remove('visible');
+
     renderBrowseCatalog();
   }
 }
@@ -969,6 +1064,17 @@ els.hudSimBtn.addEventListener('click', () => {
     headingSource = 'simulated';
   }
   requestTick();
+});
+
+els.scanCompareBtn.addEventListener('click', () => {
+  els.scanCompareBtn.style.display = 'none';
+  els.eraTrack.classList.remove('hidden-initial');
+  els.eraTrack.classList.add('revealed');
+  const currentLocPoints = points.filter(p => lastMatchedLocationKey ? p.id.replace(/-old|-current$/, '') === lastMatchedLocationKey : true);
+  const targetPoint = currentLocPoints.find(p => p.year === activeEra);
+  if (targetPoint) {
+    els.caption.innerHTML = `${targetPoint.name} <span class="src">— ${targetPoint.caption || ''}</span>`;
+  }
 });
 
 els.hudCopyBtn.addEventListener('click', () => {
@@ -1127,8 +1233,13 @@ async function loadPoints() {
   renderEraButtons();
 }
 
-function renderEraButtons(customEras = null) {
+function renderEraButtons(customEras = null, hideInitially = false) {
   els.eraTrack.innerHTML = '';
+  if (hideInitially) {
+    els.eraTrack.classList.add('hidden-initial');
+  } else {
+    els.eraTrack.classList.remove('hidden-initial');
+  }
   const currentEras = customEras || eras;
   currentEras.forEach(year => {
     const btn = document.createElement('button');
@@ -1219,7 +1330,8 @@ function findBestMatch() {
       name: oldestPoint.name,
       caption: oldestPoint.caption,
       era: oldestPoint.year,
-      locEras: locEras
+      locEras: locEras,
+      hideEraInitially: true
     });
   }
 
@@ -1498,6 +1610,9 @@ async function extractTextEmbedding(textString) {
 els.shutterBtn.addEventListener('click', captureAndIdentify);
 
 async function captureAndIdentify() {
+  // Hide overlay when starting a new snap
+  els.snapResultOverlay.classList.remove('visible');
+
   if (!visionModel || !processor || !isModelReady) {
     els.snapStatusPill.textContent = 'Still loading vision model, please wait…';
     await initClipModel();
@@ -1613,7 +1728,7 @@ async function captureAndIdentify() {
       const locPoints = points.filter(p => p.id.replace(/-old|-current$/, '') === locKey || (p.lat === bestMatchedPoint.lat && p.lon === bestMatchedPoint.lon));
       const oldestPoint = locPoints.reduce((min, p) => p.year < min.year ? p : min, locPoints[0]);
       const locEras = [...new Set(locPoints.map(p => p.year))].sort((a, b) => a - b);
-      
+
       // Automatic time flashback sequence on confirmed match
       playTimeFlashback({
         photoUrl: oldestPoint.photoUrl,
@@ -1622,11 +1737,19 @@ async function captureAndIdentify() {
         caption: oldestPoint.caption,
         era: oldestPoint.year,
         locEras: locEras,
+        hideEraInitially: false,
         onSettle: () => {
           renderSnapComparison(oldestPoint);
         },
         onComplete: () => {
-          presentSnapResult(oldestPoint, bestOverallSimilarity);
+          // Show overlay with building name instead of modal immediately
+          els.snapResultName.textContent = oldestPoint.name;
+          els.snapResultOverlay.classList.add('visible');
+          // Store the point and similarity for when button is clicked
+          els.snapOverlayCompareBtn.onclick = () => {
+            els.snapResultOverlay.classList.remove('visible');
+            presentSnapResult(oldestPoint, bestOverallSimilarity);
+          };
         }
       });
     } else {
@@ -1644,6 +1767,9 @@ function presentSnapResult(point, similarity) {
   const isMatch = similarity >= SNAP_MATCH_THRESHOLD && point !== null;
   const pct = Math.round(similarity * 100);
 
+  // Hide overlay when modal opens
+  els.snapResultOverlay.classList.remove('visible');
+
   if (isMatch && point) {
     els.snapResultTag.className = 'result-tag tag-match';
     els.snapResultTag.textContent = 'Visual Match Found';
@@ -1651,8 +1777,18 @@ function presentSnapResult(point, similarity) {
     els.snapResultTitle.textContent = point.name;
     els.snapResultDesc.textContent = point.caption || 'Tagged historical landmark in Fontainhas.';
 
-    // Setup Old vs New Comparison (defaults to oldest era)
+    // Show Compare & Details button, hide comparison box initially
+    els.snapCompareBtn.style.display = 'block';
+    els.snapCompBox.style.display = 'none';
+
+    // Setup Old vs New Comparison (defaults to oldest era) but don't show yet
     renderSnapComparison(point);
+
+    els.snapCompareBtn.onclick = () => {
+      els.snapCompareBtn.style.display = 'none';
+      els.snapCompBox.style.display = 'flex';
+      els.snapCompBox.style.animation = 'fbUiFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards';
+    };
 
     els.snapActionAr.textContent = 'View in AR Scan';
     els.snapActionAr.onclick = () => {
@@ -1661,14 +1797,18 @@ function presentSnapResult(point, similarity) {
       switchMode('scan');
     };
     els.snapActionClose.textContent = 'Snap Another';
-    els.snapActionClose.onclick = () => els.snapModal.classList.remove('visible');
+    els.snapActionClose.onclick = () => {
+      els.snapModal.classList.remove('visible');
+      els.snapResultOverlay.classList.remove('visible');
+    };
   } else {
     els.snapResultTag.className = 'result-tag tag-nomatch';
     els.snapResultTag.textContent = 'No Match';
     els.snapScoreBadge.textContent = `${pct}% Similarity`;
     els.snapResultTitle.textContent = 'Place Not Tagged Yet';
     els.snapResultDesc.textContent = 'No matching historical reference photo found in the local archive for this view. Explore our catalog or try another angle.';
-    
+
+    els.snapCompareBtn.style.display = 'none';
     els.snapCompBox.style.display = 'none';
 
     els.snapActionAr.textContent = 'Browse Catalog';
@@ -1677,14 +1817,16 @@ function presentSnapResult(point, similarity) {
       switchMode('browse');
     };
     els.snapActionClose.textContent = 'Try Again';
-    els.snapActionClose.onclick = () => els.snapModal.classList.remove('visible');
+    els.snapActionClose.onclick = () => {
+      els.snapModal.classList.remove('visible');
+      els.snapResultOverlay.classList.remove('visible');
+    };
   }
 
   els.snapModal.classList.add('visible');
 }
 
 function renderSnapComparison(matchedPoint) {
-  els.snapCompBox.style.display = 'flex';
   els.snapCompTabs.innerHTML = '';
 
   // Find all era points corresponding to this location and sort chronologically
