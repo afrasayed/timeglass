@@ -66,15 +66,19 @@ async function checkUrl(path) {
 
 (async () => {
   try {
-    // 3. Test HTML Flashback integration
+    // 3. Test HTML Pensieve Flashback integration
     const indexHtml = fs.readFileSync('index.html', 'utf8');
     assert(indexHtml.includes('id="time-flashback-fx"'), 'index.html must include #time-flashback-fx');
-    assert(indexHtml.includes('class="fb-rewind-streak"'), 'index.html must include .fb-rewind-streak');
-    assert(indexHtml.includes('class="fb-ripple-ring"'), 'index.html must include .fb-ripple-ring');
+    assert(indexHtml.includes('class="fb-mist-swirl"'), 'index.html must include .fb-mist-swirl');
+    assert(indexHtml.includes('id="fb-particles-layer"'), 'index.html must include #fb-particles-layer');
     assert(indexHtml.includes('playTimeFlashback'), 'index.html must implement playTimeFlashback');
-    assert(indexHtml.includes('flashback-photo-settle'), 'index.html must include photo settle animation');
-    assert(indexHtml.includes('flashback-ui-reveal'), 'index.html must include delayed UI reveal animation');
-    console.log('✓ Test 3: Time flashback animation elements and logic verified in index.html.');
+    assert(indexHtml.includes('spawnFloatingEmbers'), 'index.html must implement spawnFloatingEmbers');
+    assert(indexHtml.includes('fbMistSwirl'), 'index.html must include swirling mist animation');
+    assert(indexHtml.includes('fbEmberDrift'), 'index.html must include floating ember animation');
+    assert(indexHtml.includes('550'), 'index.html must use ~550ms settle beat');
+    assert(indexHtml.includes('1300'), 'index.html must use ~1300ms caption reveal beat');
+    assert(indexHtml.includes('1900'), 'index.html must use ~1900ms full resolution');
+    console.log('✓ Test 3: Pensieve-style cinematic time flashback animation elements and logic verified in index.html.');
 
     console.log('\nALL CODE VERIFICATION TESTS PASSED! 🚀');
   } catch (e) {
