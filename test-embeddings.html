@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Embedding Test - History AR</title>
+    <style>
+        body { font-family: monospace; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
+        #results { margin-top: 20px; white-space: pre-wrap; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .error { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Embedding Diagnostic Test</h1>
+    <p>This page will test the CLIP embedding system by clearing cache and running exhaustive self-match tests.</p>
+    
+    <button onclick="clearCacheAndTest()">Clear Cache & Run Full Test</button>
+    <button onclick="runTestOnly()">Run Test (Keep Cache)</button>
+    
+    <div id="status"></div>
+    <div id="results"></div>
+
+    <script>
+        const CLIP_CACHE_KEY = 'clip_reference_embeddings';
+        const CLIP_TEXT_CACHE_KEY = 'clip_text_embeddings';
+        const CLIP_CACHE_VERSION_KEY = 'clip_cache_version';
+
+        function clearCache() {
+            console.log('Clearing cache...');
+            localStorage.removeItem(CLIP_CACHE_KEY);
+            localStorage.removeItem(CLIP_TEXT_CACHE_KEY);
+            localStorage.removeItem(CLIP_CACHE_VERSION_KEY);
+            document.getElementById('status').textContent = 'Cache cleared. Loading main app...';
+        }
+
+        function clearCacheAndTest() {
+            clearCache();
+            setTimeout(() => {
+                window.location.href = 'index.html?test=embeddings';
+            }, 1000);
+        }
+
+        function runTestOnly() {
+            window.location.href = 'index.html?test=embeddings';
+        }
+    </script>
+</body>
+</html>

@@ -804,13 +804,13 @@ let visionModel = null;
 let tokenizer = null;
 let textModel = null;
 let RawImageClass = null;
-let referenceEmbeddings = []; // Array of { point, embedding: Float32Array }
+let referenceEmbeddings = {}; // Map of pointId -> { point, embedding: Float32Array } (ID-based, no array ordering issues)
 let textEmbeddings = {};      // Map of locKey -> Float32Array
 let isModelLoading = false;
 let isModelReady = false;
 
 // Cache versioning to invalidate stale embeddings on logic changes
-const CLIP_CACHE_VERSION = '2'; // Increment this to force recompute
+const CLIP_CACHE_VERSION = '3'; // Increment this to force recompute
 const CLIP_CACHE_KEY = 'clip_reference_embeddings';
 const CLIP_TEXT_CACHE_KEY = 'clip_text_embeddings';
 const CLIP_CACHE_VERSION_KEY = 'clip_cache_version';
@@ -1360,6 +1360,19 @@ async function loadPoints() {
   });
 
   renderEraButtons();
+  
+  // Check if we should run embedding test
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('test') === 'embeddings') {
+    console.log('Embedding test mode detected. Waiting for model to load...');
+    // Run test after model is ready
+    const checkModelReady = setInterval(() => {
+      if (isModelReady) {
+        clearInterval(checkModelReady);
+        setTimeout(() => runExhaustiveSelfMatchTest(), 1000);
+      }
+    }, 500);
+  }
 }
 
 function renderEraButtons(customEras = null, hideInitially = false) {
@@ -1657,23 +1670,24 @@ async function loadOrComputeReferenceEmbeddings() {
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
-      // Robust validation: check array length AND verify ALL photo URLs match
-      if (Array.isArray(parsed) && parsed.length === points.length) {
-        const allUrlsMatch = parsed.every((item, index) => 
-          item?.point?.photoUrl === points[index]?.photoUrl
-        );
+      // Now using id-based map - validate all point IDs exist
+      if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const allIdsMatch = points.every(p => parsed[p.id] && parsed[p.id].point?.photoUrl === p.photoUrl);
         
-        if (allUrlsMatch) {
-          referenceEmbeddings = parsed.map(item => ({
-            point: item.point,
-            embedding: new Float32Array(item.embedding)
-          }));
+        if (allIdsMatch) {
+          referenceEmbeddings = {};
+          for (const pointId in parsed) {
+            referenceEmbeddings[pointId] = {
+              point: parsed[pointId].point,
+              embedding: new Float32Array(parsed[pointId].embedding)
+            };
+          }
           needComputeImages = false;
-          console.log('Loaded reference image embeddings for', referenceEmbeddings.length, 'photos from cache.');
+          console.log('Loaded reference image embeddings for', Object.keys(referenceEmbeddings).length, 'photos from cache (id-based).');
           
           // Log embedding checksums to detect duplicates
-          const checksums = referenceEmbeddings.map(ref => ({
-            id: ref.point.id,
+          const checksums = Object.entries(referenceEmbeddings).map(([id, ref]) => ({
+            id,
             checksum: simpleChecksum(ref.embedding)
           }));
           console.log('Embedding checksums:', checksums);
@@ -1688,7 +1702,7 @@ async function loadOrComputeReferenceEmbeddings() {
           console.warn('Photo URLs mismatch in cache, recomputing...');
         }
       } else {
-        console.warn('Cache length mismatch. Expected', points.length, 'got', parsed?.length, '- recomputing...');
+        console.warn('Cache format changed (was array, now object). Recomputing...');
       }
     } catch (e) {
       console.warn('Invalid image embeddings cache, recomputing...', e);
@@ -1715,24 +1729,27 @@ async function loadOrComputeReferenceEmbeddings() {
   // Compute reference image embeddings if needed
   if (needComputeImages) {
     showModelBanner('Indexing tagged photos for visual matching…', 85);
-    referenceEmbeddings = [];
+    referenceEmbeddings = {};
     for (let i = 0; i < points.length; i++) {
       const p = points[i];
       const pct = 85 + Math.round(((i + 1) / points.length) * 10);
       showModelBanner(`Indexing photo ${i + 1}/${points.length} (${p.year})…`, pct);
       const emb = await extractImageEmbedding(p.photoUrl);
-      referenceEmbeddings.push({ point: p, embedding: emb });
+      referenceEmbeddings[p.id] = { point: p, embedding: emb };
       
       // Log each embedding's checksum
       console.log(`Computed embedding for ${p.id}: checksum=${simpleChecksum(emb)}, first5=[${emb.slice(0,5).map(v=>v.toFixed(4)).join(',')}]`);
     }
-    const serialized = referenceEmbeddings.map(item => ({
-      point: item.point,
-      embedding: Array.from(item.embedding)
-    }));
+    const serialized = {};
+    for (const pointId in referenceEmbeddings) {
+      serialized[pointId] = {
+        point: referenceEmbeddings[pointId].point,
+        embedding: Array.from(referenceEmbeddings[pointId].embedding)
+      };
+    }
     localStorage.setItem(CLIP_CACHE_KEY, JSON.stringify(serialized));
     localStorage.setItem(CLIP_CACHE_VERSION_KEY, CLIP_CACHE_VERSION);
-    console.log('Computed and cached reference image embeddings for', referenceEmbeddings.length, 'photos.');
+    console.log('Computed and cached reference image embeddings for', Object.keys(referenceEmbeddings).length, 'photos (id-based).');
   }
 
   // Compute semantic text embeddings if needed
@@ -1758,6 +1775,161 @@ function simpleChecksum(embedding) {
   }
   return sum.toFixed(6);
 }
+
+// Clear all CLIP cache - use this when debugging or after logic changes
+function clearAllClipCache() {
+  console.log('Clearing all CLIP cache...');
+  localStorage.removeItem(CLIP_CACHE_KEY);
+  localStorage.removeItem(CLIP_TEXT_CACHE_KEY);
+  localStorage.removeItem(CLIP_CACHE_VERSION_KEY);
+  console.log('Cache cleared. Reloading page to force recompute...');
+  location.reload();
+}
+
+// Expose for debugging
+window.clearAllClipCache = clearAllClipCache;
+
+// Comprehensive self-match test - tests each location against its own reference photo
+async function runExhaustiveSelfMatchTest() {
+  if (!isModelReady) {
+    console.error('Model not ready. Please wait for model to load first.');
+    return;
+  }
+
+  console.log('=== STARTING EXHAUSTIVE SELF-MATCH TEST ===');
+  console.log('Testing', points.length, 'locations against their own reference photos...');
+
+  const results = [];
+  
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i];
+    console.log(`Testing ${point.id} (${point.name})...`);
+    
+    try {
+      // Extract embedding from this location's own reference photo
+      const selfEmbedding = await extractImageEmbedding(point.photoUrl);
+      
+      // Find this point in referenceEmbeddings (now id-based map) and get its stored embedding
+      const storedRef = referenceEmbeddings[point.id];
+      
+      if (!storedRef) {
+        console.error(`ERROR: ${point.id} not found in referenceEmbeddings!`);
+        results.push({
+          id: point.id,
+          name: point.name,
+          expected: point.id,
+          actual: 'NOT_FOUND_IN_EMBEDDINGS',
+          similarity: 0,
+          status: 'ERROR'
+        });
+        continue;
+      }
+      
+      // Compute similarity between the freshly extracted embedding and the stored one
+      const similarity = cosineSimilarity(selfEmbedding, storedRef.embedding);
+      
+      // Now test which location this embedding would match against in the full matching logic
+      let bestMatchLocKey = null;
+      let bestMatchScore = -1;
+      let bestMatchPoint = null;
+      
+      // Group by location (same logic as the real matching function)
+      const locationGroups = {};
+      Object.values(referenceEmbeddings).forEach(ref => {
+        const locKey = ref.point.id.replace(/-old|-current$/, '');
+        if (!locationGroups[locKey]) {
+          locationGroups[locKey] = {
+            locKey,
+            name: ref.point.name.replace(/ building.*| entrance.*/i, ''),
+            refs: []
+          };
+        }
+        locationGroups[locKey].refs.push(ref);
+      });
+      
+      // Find best match using the same logic as captureAndIdentify
+      for (const locKey in locationGroups) {
+        const group = locationGroups[locKey];
+        let groupBestImgSim = -1;
+        let groupBestPoint = null;
+        
+        for (const ref of group.refs) {
+          const sim = cosineSimilarity(selfEmbedding, ref.embedding);
+          if (sim > groupBestImgSim) {
+            groupBestImgSim = sim;
+            groupBestPoint = ref.point;
+          }
+        }
+        
+        // Add semantic text score
+        let textSim = 0;
+        if (textEmbeddings[locKey]) {
+          textSim = cosineSimilarity(selfEmbedding, textEmbeddings[locKey]);
+        }
+        
+        const combinedScore = (0.55 * groupBestImgSim) + (0.45 * textSim);
+        
+        if (combinedScore > bestMatchScore) {
+          bestMatchScore = combinedScore;
+          bestMatchPoint = groupBestPoint;
+          bestMatchLocKey = locKey;
+        }
+      }
+      
+      const expectedLocKey = point.id.replace(/-old|-current$/, '');
+      const actualLocKey = bestMatchPoint ? bestMatchPoint.id.replace(/-old|-current$/, '') : 'NONE';
+      const isCorrect = actualLocKey === expectedLocKey;
+      
+      results.push({
+        id: point.id,
+        name: point.name,
+        expected: expectedLocKey,
+        actual: actualLocKey,
+        actualPointId: bestMatchPoint ? bestMatchPoint.id : 'NONE',
+        similarity: Number(similarity.toFixed(4)),
+        combinedScore: Number(bestMatchScore.toFixed(4)),
+        status: isCorrect ? 'PASS' : 'FAIL'
+      });
+      
+      console.log(`  Self-similarity: ${similarity.toFixed(4)}`);
+      console.log(`  Would match: ${actualLocKey} (${bestMatchPoint?.name}) with score ${bestMatchScore.toFixed(4)}`);
+      console.log(`  Status: ${isCorrect ? '✓ PASS' : '✗ FAIL'}`);
+      
+    } catch (error) {
+      console.error(`Error testing ${point.id}:`, error);
+      results.push({
+        id: point.id,
+        name: point.name,
+        expected: point.id.replace(/-old|-current$/, ''),
+        actual: 'ERROR',
+        similarity: 0,
+        status: 'ERROR',
+        error: error.message
+      });
+    }
+  }
+  
+  console.log('=== SELF-MATCH TEST RESULTS ===');
+  console.table(results);
+  
+  const passCount = results.filter(r => r.status === 'PASS').length;
+  const failCount = results.filter(r => r.status === 'FAIL').length;
+  const errorCount = results.filter(r => r.status === 'ERROR').length;
+  
+  console.log(`Summary: ${passCount} PASS, ${failCount} FAIL, ${errorCount} ERROR out of ${results.length} total`);
+  
+  if (failCount > 0) {
+    console.error('FAILED LOCATIONS:');
+    results.filter(r => r.status === 'FAIL').forEach(r => {
+      console.error(`  ${r.id} (${r.name}): expected ${r.expected}, got ${r.actual} (${r.actualPointId})`);
+    });
+  }
+  
+  return results;
+}
+
+// Expose for debugging
+window.runExhaustiveSelfMatchTest = runExhaustiveSelfMatchTest;
 
 async function extractImageEmbedding(imageSourceUrlOrDataUrl) {
   let inputUrl = imageSourceUrlOrDataUrl;
@@ -1838,15 +2010,15 @@ async function captureAndIdentify() {
     const queryEmbedding = await extractImageEmbedding(dataUrl);
     
     // 1. DIAGNOSTIC LOG: Raw similarity against every photo in library
-    const rawPhotoScores = referenceEmbeddings.map((ref) => {
+    const rawPhotoScores = Object.values(referenceEmbeddings).map((ref) => {
       const sim = cosineSimilarity(queryEmbedding, ref.embedding);
       return [ref.point.name + ` (${ref.point.year})`, Number(sim.toFixed(3))];
     });
-    console.log('scores (raw image-to-image for all', referenceEmbeddings.length, 'photos):', rawPhotoScores);
+    console.log('scores (raw image-to-image for all', Object.keys(referenceEmbeddings).length, 'photos):', rawPhotoScores);
 
     // 2. MULTIMODAL MATCHING: Group by location & fuse image + semantic text scores
     const locationGroups = {};
-    referenceEmbeddings.forEach(ref => {
+    Object.values(referenceEmbeddings).forEach(ref => {
       const locKey = ref.point.id.replace(/-old|-current$/, '');
       if (!locationGroups[locKey]) {
         locationGroups[locKey] = {
