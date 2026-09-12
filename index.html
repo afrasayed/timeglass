@@ -209,7 +209,7 @@
   #overlay-photo {
     position: fixed; inset: 0;
     width: 100%; height: 100%;
-    object-fit: cover;
+    object-fit: contain; /* Changed from cover to contain to show full image without cropping */
     opacity: 0;
     transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
     pointer-events: none;
@@ -810,7 +810,7 @@ let isModelLoading = false;
 let isModelReady = false;
 
 // Cache versioning to invalidate stale embeddings on logic changes
-const CLIP_CACHE_VERSION = '3'; // Increment this to force recompute
+const CLIP_CACHE_VERSION = '4'; // Increment this to force recompute
 const CLIP_CACHE_KEY = 'clip_reference_embeddings';
 const CLIP_TEXT_CACHE_KEY = 'clip_text_embeddings';
 const CLIP_CACHE_VERSION_KEY = 'clip_cache_version';
@@ -819,10 +819,12 @@ const CLIP_CACHE_VERSION_KEY = 'clip_cache_version';
 const LOCATION_DESCRIPTIONS = {
   'mushtifund': 'a photo of Mushtifund Saunstha, Bookworm Trust and Library, historic blue and white Portuguese heritage educational building in Mala Fontainhas Panjim Goa',
   'uspa': 'a photo of U.S. Polo Assn. retail clothing store, modern commercial shop building beside Virani Corporation on MG Road in Panjim Goa',
-  'calangute': 'a photo of Calangute Beach entrance plaza, beach shacks, sand, umbrellas, sunbeds, and ocean coast in Goa',
-  'tito': 'a photo of Tito\'s Lane in Baga Goa, nightlife party strip with nightclubs, bars, restaurants, and palm trees',
-  'mandovi': 'a photo of Mandovi River hillside view across from Panjim, Kingfisher and casino advertising billboards on the hill',
-  'panjim-church': 'a photo of Panaji Church, Our Lady of the Immaculate Conception, iconic white baroque church with zig-zag grand staircase in Panjim Goa'
+  'panjim-church': 'a photo of Panaji Church, Our Lady of the Immaculate Conception, iconic white baroque church with zig-zag grand staircase in Panjim Goa',
+  'adilshah': 'a photo of Adil Shah Palace, Idalcão Palace, Old Secretariat, historic colonial building on Mandovi riverfront in Panjim Goa',
+  'saotome': 'a photo of São Tomé heritage quarter, historic riverside neighborhood with traditional Portuguese and Hindu houses in Panjim Goa',
+  'tobacco-square': 'a photo of Tobacco Square Largo dos Tabaqueiros, historic public square with General Post Office and São Tomé Chapel in Panjim Goa',
+  'azadmaidan': 'a photo of Azad Maidan Freedom Ground, historic public square with Martyrs Memorial monument in Panjim Goa',
+  'casadempo': 'a photo of Casa Dempo, traditional Hindu heritage house on MG Road with distinctive colonial architecture in Panjim Goa'
 };
 
 const els = {
@@ -985,14 +987,14 @@ function playTimeFlashback({
   els.camera.classList.add('flashback-cam');
   els.timeFlashbackFx.classList.add('flashback-active');
 
-  // BEAT 3 (~360ms): Historical photo smoothly materializes through the golden mist (oldest era)
+  // BEAT 3 (~800ms): Historical photo smoothly materializes through the golden mist (oldest era)
   flashbackTimerA = setTimeout(() => {
     if (!isFlashbackPlaying) return;
     els.photo.classList.add('flashback-photo-settle');
     if (typeof onSettle === 'function') onSettle();
-  }, 360);
+  }, 800);
 
-  // BEAT 4 (~845ms): Caption and Compare button fade and float in LAST after photo has settled
+  // BEAT 4 (~2000ms): Caption and Compare button fade and float in LAST after photo has settled
   flashbackTimerB = setTimeout(() => {
     if (!isFlashbackPlaying) return;
     if (era) {
@@ -1032,9 +1034,9 @@ function playTimeFlashback({
         speechSynthesis.speak(utterance);
       }
     }
-  }, 845);
+  }, 2000);
 
-  // RESOLUTION (~1235ms): Complete flashback sequence
+  // RESOLUTION (~4000ms): Complete flashback sequence
   flashbackTimerDone = setTimeout(() => {
     isFlashbackPlaying = false;
     els.camera.classList.remove('flashback-cam');
@@ -1044,7 +1046,7 @@ function playTimeFlashback({
     els.photo.style.opacity = targetOpacity;
     if (els.particlesLayer) els.particlesLayer.innerHTML = '';
     if (typeof onComplete === 'function') onComplete();
-  }, 1235);
+  }, 4000);
 }
 
 /* ---------- Navigation & Mode Switcher ---------- */
@@ -1372,6 +1374,12 @@ async function loadPoints() {
         setTimeout(() => runExhaustiveSelfMatchTest(), 1000);
       }
     }, 500);
+  }
+  
+  // Auto-run model loading in snap mode for testing
+  if (urlParams.get('autoinit') === 'true') {
+    console.log('Auto-initializing CLIP model for testing...');
+    setTimeout(() => initClipModel(), 2000);
   }
 }
 

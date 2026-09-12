@@ -3,22 +3,28 @@
 <head>
     <title>Embedding Test - History AR</title>
     <style>
-        body { font-family: monospace; padding: 20px; max-width: 1200px; margin: 0 auto; }
-        button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
+        body { font-family: monospace; padding: 20px; max-width: 1200px; margin: 0 auto; background: #0c0a08; color: #f4efe4; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; background: #c9924f; color: #0c0a08; border: none; border-radius: 4px; }
+        button:hover { background: #8a6636; }
+        #status { margin: 20px 0; padding: 15px; background: rgba(201, 146, 79, 0.1); border: 1px solid rgba(201, 146, 79, 0.3); border-radius: 4px; }
         #results { margin-top: 20px; white-space: pre-wrap; }
-        .pass { color: green; }
-        .fail { color: red; }
-        .error { color: orange; }
+        .pass { color: #7cfc00; }
+        .fail { color: #ff4444; }
+        .error { color: #ff8800; }
+        .info { color: #88ccff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 8px; text-align: left; border: 1px solid rgba(201, 146, 79, 0.3); }
+        th { background: rgba(201, 146, 79, 0.2); }
     </style>
 </head>
 <body>
-    <h1>Embedding Diagnostic Test</h1>
+    <h1>🔍 Embedding Diagnostic Test</h1>
     <p>This page will test the CLIP embedding system by clearing cache and running exhaustive self-match tests.</p>
     
-    <button onclick="clearCacheAndTest()">Clear Cache & Run Full Test</button>
-    <button onclick="runTestOnly()">Run Test (Keep Cache)</button>
+    <button onclick="clearCacheAndTest()">🗑️ Clear Cache & Run Full Test</button>
+    <button onclick="runTestOnly()">▶️ Run Test (Keep Cache)</button>
     
-    <div id="status"></div>
+    <div id="status">Ready to test. Click a button above to begin.</div>
     <div id="results"></div>
 
     <script>
@@ -31,18 +37,18 @@
             localStorage.removeItem(CLIP_CACHE_KEY);
             localStorage.removeItem(CLIP_TEXT_CACHE_KEY);
             localStorage.removeItem(CLIP_CACHE_VERSION_KEY);
-            document.getElementById('status').textContent = 'Cache cleared. Loading main app...';
+            document.getElementById('status').innerHTML = '<span class="info">✓ Cache cleared. Loading main app...</span>';
         }
 
         function clearCacheAndTest() {
             clearCache();
             setTimeout(() => {
-                window.location.href = 'index.html?test=embeddings';
+                window.location.href = 'index.html?test=embeddings&autoinit=true';
             }, 1000);
         }
 
         function runTestOnly() {
-            window.location.href = 'index.html?test=embeddings';
+            window.location.href = 'index.html?test=embeddings&autoinit=true';
         }
     </script>
 </body>
