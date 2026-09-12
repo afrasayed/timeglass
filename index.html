@@ -44,25 +44,30 @@
     0% {
       filter: brightness(1) saturate(1) contrast(1);
       transform: scale(1);
+      opacity: 1;
     }
     22% {
       /* Beat 1: Pensieve dip — soft desaturate to sepia and gentle darkening */
       filter: brightness(0.58) grayscale(0.85) sepia(0.4) contrast(1.18);
       transform: scale(1.02);
+      opacity: 0.3;
     }
     50% {
       /* Beat 2: Swirling memory depth */
       filter: brightness(0.46) grayscale(0.9) sepia(0.55) contrast(1.25);
       transform: scale(1.005);
+      opacity: 0.1;
     }
     78% {
       /* Beat 3: Returning clarity as historical view settles */
       filter: brightness(0.88) grayscale(0.2) sepia(0.12) contrast(1.04);
       transform: scale(1);
+      opacity: 0.3;
     }
     100% {
       filter: brightness(1) saturate(1) contrast(1);
       transform: scale(1);
+      opacity: 1;
     }
   }
 
@@ -262,6 +267,34 @@
     pointer-events: none;
     background: radial-gradient(ellipse at center, transparent 48%, rgba(0,0,0,0.65) 100%);
     z-index: 3;
+  }
+
+  /* Fog Backdrop for Flashback */
+  #fog-backdrop {
+    position: fixed; inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: 
+      radial-gradient(ellipse at 20% 30%, rgba(201, 146, 79, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(201, 146, 79, 0.05) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 50%, rgba(12, 10, 8, 0.95) 0%, rgba(8, 6, 4, 0.98) 100%);
+    transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  #fog-backdrop.active {
+    opacity: 1;
+  }
+  #fog-backdrop::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: 
+      radial-gradient(ellipse at 30% 20%, rgba(201, 146, 79, 0.03) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 80%, rgba(201, 146, 79, 0.02) 0%, transparent 50%);
+    animation: fogDrift 8s ease-in-out infinite alternate;
+  }
+  @keyframes fogDrift {
+    0% { transform: translateX(-2%) translateY(-1%); opacity: 0.6; }
+    100% { transform: translateX(2%) translateY(1%); opacity: 1; }
   }
 
   /* Start Screen */
@@ -647,6 +680,7 @@
 
   <!-- Shared Fullscreen Camera Video Element & Time Flashback FX -->
   <video id="camera" autoplay playsinline webkit-playsinline muted></video>
+  <div id="fog-backdrop"></div>
   <img id="overlay-photo" alt="">
   <div id="time-flashback-fx">
     <div class="fb-mist-swirl"></div>
@@ -829,6 +863,7 @@ const LOCATION_DESCRIPTIONS = {
 
 const els = {
   camera: document.getElementById('camera'),
+  fogBackdrop: document.getElementById('fog-backdrop'),
   photo: document.getElementById('overlay-photo'),
   timeFlashbackFx: document.getElementById('time-flashback-fx'),
   status: document.getElementById('status-text'),
@@ -980,11 +1015,13 @@ function playTimeFlashback({
 
   // Trigger reflow for animations
   void els.camera.offsetWidth;
+  void els.fogBackdrop.offsetWidth;
   void els.timeFlashbackFx.offsetWidth;
   void els.photo.offsetWidth;
 
-  // BEATS 1 & 2 (0 - 550ms): Camera desaturates & swirling Pensieve mist begins rotating & expanding
+  // BEATS 1 & 2 (0 - 550ms): Camera fades out, fog fades in, and swirling Pensieve mist begins rotating & expanding
   els.camera.classList.add('flashback-cam');
+  els.fogBackdrop.classList.add('active');
   els.timeFlashbackFx.classList.add('flashback-active');
 
   // BEAT 3 (~800ms): Historical photo smoothly materializes through the golden mist (oldest era)
@@ -1016,19 +1053,49 @@ function playTimeFlashback({
       const narrationText = narration || caption;
       if (narrationText) {
         const utterance = new SpeechSynthesisUtterance(narrationText);
-        utterance.pitch = 0.9;
-        utterance.rate = 0.95;
+        
+        // Fairytale voice configuration - gentle, warm, peaceful
+        utterance.pitch = 1.1; // Slightly higher for gentleness
+        utterance.rate = 0.8; // Slower for storytelling pace (sweet spot to avoid robotic stretching)
 
-        // Try to select a mature voice
+        // Try to select the best voice for fairytale narration
         const voices = speechSynthesis.getVoices();
-        const matureVoice = voices.find(voice =>
-          voice.name.includes('Male') ||
-          voice.name.includes('Female') ||
-          voice.name.includes('English') ||
-          voice.lang.startsWith('en')
-        );
-        if (matureVoice) {
-          utterance.voice = matureVoice;
+        
+        // Priority order for voice selection
+        const preferredVoices = [
+          'Microsoft Aria',      // Soft female voice
+          'Microsoft Jenny',    // Natural female voice  
+          'Microsoft Zira',     // Female voice
+          'Samantha',           // macOS female voice
+          'Victoria',           // macOS female voice
+          'Google US English',  // Google female voice
+          'Microsoft David',    // Male voice fallback
+        ];
+        
+        let selectedVoice = null;
+        for (const preferredName of preferredVoices) {
+          const found = voices.find(voice => voice.name === preferredName);
+          if (found) {
+            selectedVoice = found;
+            break;
+          }
+        }
+        
+        // Fallback to any English voice if preferred not found
+        if (!selectedVoice) {
+          selectedVoice = voices.find(voice =>
+            voice.lang.startsWith('en') && (voice.name.includes('Female') || voice.name.includes('Google'))
+          );
+        }
+        
+        // Final fallback to any English voice
+        if (!selectedVoice) {
+          selectedVoice = voices.find(voice => voice.lang.startsWith('en'));
+        }
+        
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+          console.log('Using voice:', selectedVoice.name, 'pitch:', utterance.pitch, 'rate:', utterance.rate);
         }
 
         speechSynthesis.speak(utterance);
@@ -1040,6 +1107,7 @@ function playTimeFlashback({
   flashbackTimerDone = setTimeout(() => {
     isFlashbackPlaying = false;
     els.camera.classList.remove('flashback-cam');
+    els.fogBackdrop.classList.remove('active');
     els.timeFlashbackFx.classList.remove('flashback-active');
     els.photo.classList.remove('flashback-photo-settle');
     els.scanBottomBar.classList.remove('flashback-ui-reveal');
@@ -1380,6 +1448,15 @@ async function loadPoints() {
   if (urlParams.get('autoinit') === 'true') {
     console.log('Auto-initializing CLIP model for testing...');
     setTimeout(() => initClipModel(), 2000);
+  }
+  
+  // Voice testing mode
+  if (urlParams.get('voice-test') === 'true') {
+    console.log('Voice test mode detected. Initializing voice comparison...');
+    setTimeout(() => {
+      logAvailableVoices();
+      setTimeout(() => compareVoiceConfigs(), 2000);
+    }, 1000);
   }
 }
 
@@ -1939,6 +2016,118 @@ async function runExhaustiveSelfMatchTest() {
 // Expose for debugging
 window.runExhaustiveSelfMatchTest = runExhaustiveSelfMatchTest;
 
+// Voice testing and logging functionality
+function logAvailableVoices() {
+  if (!('speechSynthesis' in window)) {
+    console.error('Speech synthesis not supported in this browser');
+    return [];
+  }
+  
+  const voices = speechSynthesis.getVoices();
+  console.log('=== AVAILABLE VOICES ===');
+  console.log('Total voices:', voices.length);
+  voices.forEach((voice, index) => {
+    console.log(`${index + 1}. "${voice.name}" (${voice.lang})`);
+    console.log(`   Default: ${voice.default}, Local: ${voice.localService}`);
+  });
+  
+  return voices;
+}
+
+function testVoiceConfiguration(voiceName, pitch, rate, testText = "Welcome to Timeglass, where history comes alive through your camera.") {
+  if (!('speechSynthesis' in window)) {
+    console.error('Speech synthesis not supported');
+    return;
+  }
+  
+  const voices = speechSynthesis.getVoices();
+  const selectedVoice = voices.find(v => v.name === voiceName);
+  
+  if (!selectedVoice) {
+    console.error(`Voice "${voiceName}" not found. Available voices:`, voices.map(v => v.name));
+    return;
+  }
+  
+  console.log(`Testing voice: "${voiceName}" with pitch=${pitch}, rate=${rate}`);
+  
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(testText);
+  utterance.voice = selectedVoice;
+  utterance.pitch = pitch;
+  utterance.rate = rate;
+  
+  speechSynthesis.speak(utterance);
+}
+
+// Function to try multiple voice configurations for comparison
+function compareVoiceConfigs(testText = "Welcome to Timeglass, where history comes alive through your camera.") {
+  if (!('speechSynthesis' in window)) {
+    console.error('Speech synthesis not supported');
+    return;
+  }
+  
+  const voices = speechSynthesis.getVoices();
+  console.log('=== TESTING VOICE CONFIGURATIONS ===');
+  console.log('Test text:', testText);
+  
+  // Try different configurations with preferred voices
+  const configs = [
+    // English voices to try
+    { voiceName: 'Microsoft David', pitch: 0.9, rate: 0.75 },
+    { voiceName: 'Microsoft Zira', pitch: 1.15, rate: 0.75 },
+    { voiceName: 'Google US English', pitch: 1.1, rate: 0.8 },
+    { voiceName: 'Samantha', pitch: 1.15, rate: 0.75 },
+    { voiceName: 'Victoria', pitch: 1.2, rate: 0.7 },
+    // Gentle female configurations
+    { voiceName: 'Microsoft Aria', pitch: 1.1, rate: 0.8 },
+    { voiceName: 'Microsoft Jenny', pitch: 1.0, rate: 0.75 },
+    // Generic fallbacks
+    { voiceName: null, pitch: 1.15, rate: 0.75 }, // Default
+  ];
+  
+  let configIndex = 0;
+  
+  function playNextConfig() {
+    if (configIndex >= configs.length) {
+      console.log('Voice configuration testing complete');
+      return;
+    }
+    
+    const config = configs[configIndex];
+    const voice = config.voiceName ? voices.find(v => v.name === config.voiceName) : null;
+    
+    if (config.voiceName && !voice) {
+      console.log(`Skipping "${config.voiceName}" - not available`);
+      configIndex++;
+      setTimeout(playNextConfig, 100);
+      return;
+    }
+    
+    const voiceName = voice ? voice.name : 'Default';
+    console.log(`Playing config ${configIndex + 1}/${configs.length}: "${voiceName}" pitch=${config.pitch} rate=${config.rate}`);
+    
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(testText);
+    if (voice) utterance.voice = voice;
+    utterance.pitch = config.pitch;
+    utterance.rate = config.rate;
+    
+    utterance.onend = () => {
+      configIndex++;
+      setTimeout(playNextConfig, 1500); // Pause between configs
+    };
+    
+    speechSynthesis.speak(utterance);
+  }
+  
+  playNextConfig();
+}
+
+// Expose for debugging
+window.logAvailableVoices = logAvailableVoices;
+window.testVoiceConfiguration = testVoiceConfiguration;
+window.compareVoiceConfigs = compareVoiceConfigs;
+
 async function extractImageEmbedding(imageSourceUrlOrDataUrl) {
   let inputUrl = imageSourceUrlOrDataUrl;
   const isCanvas = typeof imageSourceUrlOrDataUrl !== 'string';
@@ -2086,6 +2275,25 @@ async function captureAndIdentify() {
     console.log('scores (per-location summary):', scoresSummary.map(s => [s.location, s.fusedScore.toFixed(3)]));
     console.log('scores breakdown (visual vs semantic):', scoresSummary);
     console.log('Best match candidate:', bestMatchedPoint?.name, 'fused similarity:', bestOverallSimilarity.toFixed(3), 'threshold:', SNAP_MATCH_THRESHOLD);
+    
+    // Enhanced logging for reliability debugging
+    console.log('MATCH ATTEMPT DETAILS:');
+    console.log('  Best location:', bestMatchedPoint?.name, '(', bestMatchedPoint?.id, ')');
+    console.log('  Fused score:', bestOverallSimilarity.toFixed(4));
+    console.log('  Threshold:', SNAP_MATCH_THRESHOLD);
+    console.log('  Score vs threshold:', (bestOverallSimilarity - SNAP_MATCH_THRESHOLD).toFixed(4));
+    console.log('  Match result:', bestOverallSimilarity >= SNAP_MATCH_THRESHOLD ? '✓ SUCCESS' : '✗ FAILED');
+    
+    // Log top 3 candidates for comparison
+    const topCandidates = scoresSummary
+      .sort((a, b) => b.fusedScore - a.fusedScore)
+      .slice(0, 3);
+    console.log('Top 3 candidates:', topCandidates.map(c => ({
+      location: c.location,
+      fusedScore: c.fusedScore,
+      visualScore: c.maxVisualScore,
+      textScore: c.textSemanticScore
+    })));
 
     hideModelBanner();
 

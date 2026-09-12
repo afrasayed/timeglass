@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Embedding Test - History AR</title>
+    <title>History AR Testing Tools</title>
     <style>
         body { font-family: monospace; padding: 20px; max-width: 1200px; margin: 0 auto; background: #0c0a08; color: #f4efe4; }
         button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; background: #c9924f; color: #0c0a08; border: none; border-radius: 4px; }
         button:hover { background: #8a6636; }
+        button:disabled { background: #666; cursor: not-allowed; }
         #status { margin: 20px 0; padding: 15px; background: rgba(201, 146, 79, 0.1); border: 1px solid rgba(201, 146, 79, 0.3); border-radius: 4px; }
         #results { margin-top: 20px; white-space: pre-wrap; }
         .pass { color: #7cfc00; }
@@ -15,14 +16,36 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 8px; text-align: left; border: 1px solid rgba(201, 146, 79, 0.3); }
         th { background: rgba(201, 146, 79, 0.2); }
+        .section { margin: 30px 0; padding: 20px; background: rgba(201, 146, 79, 0.05); border: 1px solid rgba(201, 146, 79, 0.2); border-radius: 8px; }
+        .section h2 { margin-top: 0; color: #c9924f; }
     </style>
 </head>
 <body>
-    <h1>🔍 Embedding Diagnostic Test</h1>
-    <p>This page will test the CLIP embedding system by clearing cache and running exhaustive self-match tests.</p>
+    <h1>� History AR Testing Tools</h1>
     
-    <button onclick="clearCacheAndTest()">🗑️ Clear Cache & Run Full Test</button>
-    <button onclick="runTestOnly()">▶️ Run Test (Keep Cache)</button>
+    <div class="section">
+        <h2>�🔍 Embedding Diagnostic Tests</h2>
+        <p>Test the CLIP embedding system by clearing cache and running exhaustive self-match tests.</p>
+        
+        <button onclick="clearCacheAndTest()">🗑️ Clear Cache & Run Full Test</button>
+        <button onclick="runTestOnly()">▶️ Run Test (Keep Cache)</button>
+    </div>
+    
+    <div class="section">
+        <h2>🎤 Voice Testing Tools</h2>
+        <p>Test and compare different voice configurations for the fairytale narration.</p>
+        
+        <button onclick="logVoices()">📋 Log Available Voices</button>
+        <button onclick="compareVoices()">🔊 Compare Voice Configurations</button>
+        <button onclick="testCustomVoice()">🎯 Test Custom Voice</button>
+        
+        <div id="voice-controls" style="margin-top: 15px; display: none;">
+            <label>Voice Name: <input type="text" id="voice-name" placeholder="e.g., Microsoft Aria"></label><br><br>
+            <label>Pitch: <input type="number" id="voice-pitch" value="1.1" step="0.1" min="0.5" max="2"></label><br><br>
+            <label>Rate: <input type="number" id="voice-rate" value="0.8" step="0.05" min="0.5" max="1.5"></label><br><br>
+            <button onclick="runCustomVoiceTest()">Test Configuration</button>
+        </div>
+    </div>
     
     <div id="status">Ready to test. Click a button above to begin.</div>
     <div id="results"></div>
@@ -32,12 +55,17 @@
         const CLIP_TEXT_CACHE_KEY = 'clip_text_embeddings';
         const CLIP_CACHE_VERSION_KEY = 'clip_cache_version';
 
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = `<span class="${type}">${message}</span>`;
+        }
+
         function clearCache() {
             console.log('Clearing cache...');
             localStorage.removeItem(CLIP_CACHE_KEY);
             localStorage.removeItem(CLIP_TEXT_CACHE_KEY);
             localStorage.removeItem(CLIP_CACHE_VERSION_KEY);
-            document.getElementById('status').innerHTML = '<span class="info">✓ Cache cleared. Loading main app...</span>';
+            updateStatus('✓ Cache cleared. Loading main app...', 'info');
         }
 
         function clearCacheAndTest() {
@@ -49,6 +77,89 @@
 
         function runTestOnly() {
             window.location.href = 'index.html?test=embeddings&autoinit=true';
+        }
+        
+        function logVoices() {
+            if (!('speechSynthesis' in window)) {
+                updateStatus('❌ Speech synthesis not supported in this browser', 'error');
+                return;
+            }
+            
+            // Ensure voices are loaded
+            if (speechSynthesis.getVoices().length === 0) {
+                speechSynthesis.onvoiceschanged = () => {
+                    displayVoices();
+                };
+                updateStatus('⏳ Loading voices...', 'info');
+            } else {
+                displayVoices();
+            }
+        }
+        
+        function displayVoices() {
+            const voices = speechSynthesis.getVoices();
+            console.log('=== AVAILABLE VOICES ===');
+            console.log('Total voices:', voices.length);
+            
+            let html = '<h3>Available Voices (' + voices.length + ')</h3><table><tr><th>#</th><th>Name</th><th>Language</th><th>Default</th><th>Local</th></tr>';
+            
+            voices.forEach((voice, index) => {
+                console.log(`${index + 1}. "${voice.name}" (${voice.lang}) - Default: ${voice.default}, Local: ${voice.localService}`);
+                html += `<tr><td>${index + 1}</td><td>${voice.name}</td><td>${voice.lang}</td><td>${voice.default ? '✓' : ''}</td><td>${voice.localService ? '✓' : ''}</td></tr>`;
+            });
+            
+            html += '</table>';
+            document.getElementById('results').innerHTML = html;
+            updateStatus('✓ Voices logged to console and displayed below', 'pass');
+        }
+        
+        function compareVoices() {
+            if (!('speechSynthesis' in window)) {
+                updateStatus('❌ Speech synthesis not supported in this browser', 'error');
+                return;
+            }
+            
+            // Load main app to access voice testing functions
+            updateStatus('🔄 Loading main app for voice comparison...', 'info');
+            setTimeout(() => {
+                window.location.href = 'index.html?voice-test=true';
+            }, 1000);
+        }
+        
+        function testCustomVoice() {
+            document.getElementById('voice-controls').style.display = 'block';
+            updateStatus('🎯 Configure custom voice settings and click Test Configuration', 'info');
+        }
+        
+        function runCustomVoiceTest() {
+            const voiceName = document.getElementById('voice-name').value;
+            const pitch = parseFloat(document.getElementById('voice-pitch').value);
+            const rate = parseFloat(document.getElementById('voice-rate').value);
+            
+            if (!('speechSynthesis' in window)) {
+                updateStatus('❌ Speech synthesis not supported in this browser', 'error');
+                return;
+            }
+            
+            const voices = speechSynthesis.getVoices();
+            const selectedVoice = voices.find(v => v.name === voiceName);
+            
+            if (!selectedVoice) {
+                updateStatus(`❌ Voice "${voiceName}" not found. Use "Log Available Voices" to see options.`, 'error');
+                return;
+            }
+            
+            const testText = "Welcome to Timeglass, where history comes alive through your camera.";
+            const utterance = new SpeechSynthesisUtterance(testText);
+            utterance.voice = selectedVoice;
+            utterance.pitch = pitch;
+            utterance.rate = rate;
+            
+            speechSynthesis.cancel();
+            speechSynthesis.speak(utterance);
+            
+            updateStatus(`🔊 Playing: "${voiceName}" with pitch=${pitch}, rate=${rate}`, 'pass');
+            console.log(`Testing voice: "${voiceName}" with pitch=${pitch}, rate=${rate}`);
         }
     </script>
 </body>
