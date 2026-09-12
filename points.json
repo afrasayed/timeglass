@@ -266,28 +266,7 @@
       "year": 1900,
       "photoUrl": "photos/panjim-church-1900.jpg",
       "caption": "An earlier view of Panjim's iconic church, completed in 1619 and rebuilt in Baroque style over the centuries. YEAR PLACEHOLDER — replace with your source's actual date."
-    },
-    {
-      "id": "mahalaxmi-old",
-      "locKey": "mahalaxmi",
-      "name": "Mahalaxmi Temple",
-      "lat": 15.4972,
-      "lon": 73.8295,
-      "heading": 45,
-      "year": 1900,
-      "photoUrl": "photos/mahalaxmi-old.jpg",
-      "caption": "The historic Mahalaxmi Temple in Panjim, one of the city's important Hindu religious sites. YEAR PLACEHOLDER — replace with your source's actual date."
-    },
-    {
-      "id": "mahalaxmi-current",
-      "locKey": "mahalaxmi",
-      "name": "Mahalaxmi Temple",
-      "lat": 15.4972,
-      "lon": 73.8295,
-      "heading": 45,
-      "year": 2024,
-      "photoUrl": "photos/mahalaxmi-current.jpg",
-      "caption": "Mahalaxmi Temple today, still serving as an active place of worship in the heart of Panjim."
     }
+
   ]
 }

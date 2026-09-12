@@ -779,8 +779,6 @@ if ('serviceWorker' in navigator) {
 const MATCH_RADIUS_M = 60;          // how close you must be to a point, in meters (Scan mode)
 const HEADING_CONE_DEG = 70;        // how far off-heading still counts as a match (Scan mode)
 const SNAP_MATCH_THRESHOLD = 0.48;  // Tuned for multimodal (image + text) angle robustness
-const CLIP_CACHE_KEY = 'timeglass_clip_embeddings_v5';
-const CLIP_TEXT_CACHE_KEY = 'timeglass_clip_text_embeddings_v5';
 
 /* ---------- application state ---------- */
 let currentMode = 'scan'; // 'scan' | 'snap' | 'browse'
@@ -810,6 +808,12 @@ let referenceEmbeddings = []; // Array of { point, embedding: Float32Array }
 let textEmbeddings = {};      // Map of locKey -> Float32Array
 let isModelLoading = false;
 let isModelReady = false;
+
+// Cache versioning to invalidate stale embeddings on logic changes
+const CLIP_CACHE_VERSION = '2'; // Increment this to force recompute
+const CLIP_CACHE_KEY = 'clip_reference_embeddings';
+const CLIP_TEXT_CACHE_KEY = 'clip_text_embeddings';
+const CLIP_CACHE_VERSION_KEY = 'clip_cache_version';
 
 // Location Semantic Text Descriptions for Zero-Shot Disambiguation
 const LOCATION_DESCRIPTIONS = {
@@ -1637,20 +1641,54 @@ async function initClipModel() {
 async function loadOrComputeReferenceEmbeddings() {
   const cached = localStorage.getItem(CLIP_CACHE_KEY);
   const cachedText = localStorage.getItem(CLIP_TEXT_CACHE_KEY);
+  const cachedVersion = localStorage.getItem(CLIP_CACHE_VERSION_KEY);
 
   let needComputeImages = true;
   let needComputeText = true;
 
+  // Check cache version - invalidate if logic changed
+  if (cachedVersion !== CLIP_CACHE_VERSION) {
+    console.log('Cache version mismatch. Current:', CLIP_CACHE_VERSION, 'Cached:', cachedVersion, '- forcing recompute');
+    localStorage.removeItem(CLIP_CACHE_KEY);
+    localStorage.removeItem(CLIP_TEXT_CACHE_KEY);
+    localStorage.removeItem(CLIP_CACHE_VERSION_KEY);
+  }
+
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length === points.length && parsed[0]?.point?.photoUrl === points[0]?.photoUrl) {
-        referenceEmbeddings = parsed.map(item => ({
-          point: item.point,
-          embedding: new Float32Array(item.embedding)
-        }));
-        needComputeImages = false;
-        console.log('Loaded reference image embeddings for', referenceEmbeddings.length, 'photos from cache.');
+      // Robust validation: check array length AND verify ALL photo URLs match
+      if (Array.isArray(parsed) && parsed.length === points.length) {
+        const allUrlsMatch = parsed.every((item, index) => 
+          item?.point?.photoUrl === points[index]?.photoUrl
+        );
+        
+        if (allUrlsMatch) {
+          referenceEmbeddings = parsed.map(item => ({
+            point: item.point,
+            embedding: new Float32Array(item.embedding)
+          }));
+          needComputeImages = false;
+          console.log('Loaded reference image embeddings for', referenceEmbeddings.length, 'photos from cache.');
+          
+          // Log embedding checksums to detect duplicates
+          const checksums = referenceEmbeddings.map(ref => ({
+            id: ref.point.id,
+            checksum: simpleChecksum(ref.embedding)
+          }));
+          console.log('Embedding checksums:', checksums);
+          
+          // Check for identical embeddings
+          const uniqueChecksums = new Set(checksums.map(c => c.checksum));
+          if (uniqueChecksums.size < checksums.length) {
+            console.warn('DUPLICATE EMBEDDINGS DETECTED! Some locations have identical vectors.');
+            needComputeImages = true; // Force recompute
+          }
+        } else {
+          console.warn('Photo URLs mismatch in cache, recomputing...');
+        }
+      } else {
+        console.warn('Cache length mismatch. Expected', points.length, 'got', parsed?.length, '- recomputing...');
       }
     } catch (e) {
       console.warn('Invalid image embeddings cache, recomputing...', e);
@@ -1684,12 +1722,16 @@ async function loadOrComputeReferenceEmbeddings() {
       showModelBanner(`Indexing photo ${i + 1}/${points.length} (${p.year})…`, pct);
       const emb = await extractImageEmbedding(p.photoUrl);
       referenceEmbeddings.push({ point: p, embedding: emb });
+      
+      // Log each embedding's checksum
+      console.log(`Computed embedding for ${p.id}: checksum=${simpleChecksum(emb)}, first5=[${emb.slice(0,5).map(v=>v.toFixed(4)).join(',')}]`);
     }
     const serialized = referenceEmbeddings.map(item => ({
       point: item.point,
       embedding: Array.from(item.embedding)
     }));
     localStorage.setItem(CLIP_CACHE_KEY, JSON.stringify(serialized));
+    localStorage.setItem(CLIP_CACHE_VERSION_KEY, CLIP_CACHE_VERSION);
     console.log('Computed and cached reference image embeddings for', referenceEmbeddings.length, 'photos.');
   }
 
@@ -1708,9 +1750,20 @@ async function loadOrComputeReferenceEmbeddings() {
   }
 }
 
+// Simple checksum for embedding vectors to detect duplicates
+function simpleChecksum(embedding) {
+  let sum = 0;
+  for (let i = 0; i < embedding.length; i++) {
+    sum += embedding[i];
+  }
+  return sum.toFixed(6);
+}
+
 async function extractImageEmbedding(imageSourceUrlOrDataUrl) {
   let inputUrl = imageSourceUrlOrDataUrl;
-  if (typeof imageSourceUrlOrDataUrl !== 'string') {
+  const isCanvas = typeof imageSourceUrlOrDataUrl !== 'string';
+  
+  if (isCanvas) {
     if (imageSourceUrlOrDataUrl instanceof HTMLCanvasElement || (imageSourceUrlOrDataUrl && typeof imageSourceUrlOrDataUrl.toDataURL === 'function')) {
       inputUrl = imageSourceUrlOrDataUrl.toDataURL('image/jpeg', 0.85);
     } else if (imageSourceUrlOrDataUrl instanceof Blob) {
@@ -1720,10 +1773,18 @@ async function extractImageEmbedding(imageSourceUrlOrDataUrl) {
     }
   }
 
+  console.log('Extracting embedding for:', isCanvas ? 'canvas snapshot' : inputUrl);
+  
   const image = await RawImageClass.fromURL(inputUrl);
+  console.log('Image loaded:', image.width, 'x', image.height, 'channels:', image.channels);
+  
   const image_inputs = await processor(image);
   const { image_embeds } = await visionModel(image_inputs);
-  return new Float32Array(image_embeds.data);
+  
+  const embedding = new Float32Array(image_embeds.data);
+  console.log('Embedding computed: length=', embedding.length, 'checksum=', simpleChecksum(embedding));
+  
+  return embedding;
 }
 
 async function extractTextEmbedding(textString) {
@@ -1781,7 +1842,7 @@ async function captureAndIdentify() {
       const sim = cosineSimilarity(queryEmbedding, ref.embedding);
       return [ref.point.name + ` (${ref.point.year})`, Number(sim.toFixed(3))];
     });
-    console.log('scores (raw image-to-image for all 12 photos):', rawPhotoScores);
+    console.log('scores (raw image-to-image for all', referenceEmbeddings.length, 'photos):', rawPhotoScores);
 
     // 2. MULTIMODAL MATCHING: Group by location & fuse image + semantic text scores
     const locationGroups = {};
