@@ -812,7 +812,7 @@ if ('serviceWorker' in navigator) {
 /* ---------- config ---------- */
 const MATCH_RADIUS_M = 60;          // how close you must be to a point, in meters (Scan mode)
 const HEADING_CONE_DEG = 70;        // how far off-heading still counts as a match (Scan mode)
-const SNAP_MATCH_THRESHOLD = 0.48;  // Tuned for multimodal (image + text) angle robustness
+const SNAP_MATCH_THRESHOLD = 0.42;  // Relaxed threshold for better reliability (was 0.48, too strict after recent changes)
 
 /* ---------- application state ---------- */
 let currentMode = 'scan'; // 'scan' | 'snap' | 'browse'
@@ -842,6 +842,9 @@ let referenceEmbeddings = {}; // Map of pointId -> { point, embedding: Float32Ar
 let textEmbeddings = {};      // Map of locKey -> Float32Array
 let isModelLoading = false;
 let isModelReady = false;
+
+// Frame variance tracking for reliability debugging
+let recentSnapScores = []; // Track recent snap attempt scores
 
 // Cache versioning to invalidate stale embeddings on logic changes
 const CLIP_CACHE_VERSION = '4'; // Increment this to force recompute
@@ -1646,7 +1649,7 @@ function tick() {
   }
 }
 
-setInterval(requestTick, 800);
+setInterval(requestTick, 500); // Increased frequency from 800ms to 500ms for more responsive matching
 
 /* =========================================================================
    SNAP TO IDENTIFY (Multimodal Image + Text Semantic CLIP Engine)
@@ -2283,6 +2286,36 @@ async function captureAndIdentify() {
     console.log('  Threshold:', SNAP_MATCH_THRESHOLD);
     console.log('  Score vs threshold:', (bestOverallSimilarity - SNAP_MATCH_THRESHOLD).toFixed(4));
     console.log('  Match result:', bestOverallSimilarity >= SNAP_MATCH_THRESHOLD ? '✓ SUCCESS' : '✗ FAILED');
+    
+    // Track frame variance
+    recentSnapScores.push({
+      timestamp: Date.now(),
+      score: bestOverallSimilarity,
+      location: bestMatchedPoint?.name,
+      success: bestOverallSimilarity >= SNAP_MATCH_THRESHOLD
+    });
+    
+    // Keep only last 10 scores
+    if (recentSnapScores.length > 10) {
+      recentSnapScores.shift();
+    }
+    
+    // Calculate variance if we have enough samples
+    if (recentSnapScores.length >= 3) {
+      const scores = recentSnapScores.map(s => s.score);
+      const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const variance = scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length;
+      const stdDev = Math.sqrt(variance);
+      console.log('Frame variance analysis (last', recentSnapScores.length, 'attempts):');
+      console.log('  Mean score:', mean.toFixed(4));
+      console.log('  Std deviation:', stdDev.toFixed(4));
+      console.log('  Min/Max:', Math.min(...scores).toFixed(4), '/', Math.max(...scores).toFixed(4));
+      console.log('  Recent attempts:', recentSnapScores.map(s => ({
+        location: s.location,
+        score: s.score.toFixed(4),
+        result: s.success ? '✓' : '✗'
+      })));
+    }
     
     // Log top 3 candidates for comparison
     const topCandidates = scoresSummary
