@@ -1053,119 +1053,122 @@ function playTimeFlashback({
     
     els.timeFlashbackFx.classList.add('flashback-active');
 
-  // BEAT 3 (~800ms): Historical photo smoothly materializes through the golden mist (oldest era)
-  flashbackTimerA = setTimeout(() => {
-    if (!isFlashbackPlaying) return;
-    els.photo.classList.add('flashback-photo-settle');
-    if (typeof onSettle === 'function') onSettle();
-  }, 800);
+    // BEAT 3 (~800ms): Historical photo smoothly materializes through the golden mist (oldest era)
+    flashbackTimerA = setTimeout(() => {
+      if (!isFlashbackPlaying) return;
+      els.photo.classList.add('flashback-photo-settle');
+      if (typeof onSettle === 'function') onSettle();
+    }, 800);
 
-  // BEAT 4 (~2000ms): Caption and Compare button fade and float in LAST after photo has settled
-  flashbackTimerB = setTimeout(() => {
-    if (!isFlashbackPlaying) return;
-    if (era) {
-      activeEra = era;
-      els.yearBadge.textContent = era;
-      if (locEras) renderEraButtons(locEras, true);
-    }
-    if (name) {
-      els.caption.innerHTML = `${name}`;
-    }
-    els.scanCompareBtn.classList.add('revealed');
-    els.scanBottomBar.classList.remove('flashback-ui-pending');
-    els.scanBottomBar.classList.add('flashback-ui-reveal');
+    // BEAT 4 (~2000ms): Caption and Compare button fade and float in LAST after photo has settled
+    flashbackTimerB = setTimeout(() => {
+      if (!isFlashbackPlaying) return;
+      if (era) {
+        activeEra = era;
+        els.yearBadge.textContent = era;
+        if (locEras) renderEraButtons(locEras, true);
+      }
+      if (name) {
+        els.caption.innerHTML = `${name}`;
+      }
+      els.scanCompareBtn.classList.add('revealed');
+      els.scanBottomBar.classList.remove('flashback-ui-pending');
+      els.scanBottomBar.classList.add('flashback-ui-reveal');
 
-    // Ghost Guide narration
-    try {
-      if (!isNarrationMuted && 'speechSynthesis' in window) {
-        console.log('Starting narration with text:', narration || caption);
-        speechSynthesis.cancel(); // Cancel any in-progress utterance
+      // Ghost Guide narration
+      try {
+        if (!isNarrationMuted && 'speechSynthesis' in window) {
+          console.log('Starting narration with text:', narration || caption);
+          speechSynthesis.cancel(); // Cancel any in-progress utterance
 
-        const narrationText = narration || caption;
-        if (narrationText) {
-          const utterance = new SpeechSynthesisUtterance(narrationText);
-          
-          // Apply unified fairytale voice configuration
-          configureFairytaleVoice(utterance);
+          const narrationText = narration || caption;
+          if (narrationText) {
+            const utterance = new SpeechSynthesisUtterance(narrationText);
+            
+            // Apply unified fairytale voice configuration
+            configureFairytaleVoice(utterance);
 
-          // Try to select the best voice for fairytale narration
-          const voices = speechSynthesis.getVoices();
-          console.log('Available voices:', voices.length);
-          
-          // Priority order for voice selection
-          const preferredVoices = [
-            'Microsoft Aria',      // Soft female voice
-            'Microsoft Jenny',    // Natural female voice  
-            'Microsoft Zira',     // Female voice
-            'Samantha',           // macOS female voice
-            'Victoria',           // macOS female voice
-            'Google US English',  // Google female voice
-            'Microsoft David',    // Male voice fallback
-          ];
-          
-          let selectedVoice = null;
-          for (const preferredName of preferredVoices) {
-            const found = voices.find(voice => voice.name === preferredName);
-            if (found) {
-              selectedVoice = found;
-              break;
+            // Try to select the best voice for fairytale narration
+            const voices = speechSynthesis.getVoices();
+            console.log('Available voices:', voices.length);
+            
+            // Priority order for voice selection
+            const preferredVoices = [
+              'Microsoft Aria',      // Soft female voice
+              'Microsoft Jenny',    // Natural female voice  
+              'Microsoft Zira',     // Female voice
+              'Samantha',           // macOS female voice
+              'Victoria',           // macOS female voice
+              'Google US English',  // Google female voice
+              'Microsoft David',    // Male voice fallback
+            ];
+            
+            let selectedVoice = null;
+            for (const preferredName of preferredVoices) {
+              const found = voices.find(voice => voice.name === preferredName);
+              if (found) {
+                selectedVoice = found;
+                break;
+              }
             }
-          }
-          
-          // Fallback to any English voice if preferred not found
-          if (!selectedVoice) {
-            selectedVoice = voices.find(voice =>
-              voice.lang.startsWith('en') && (voice.name.includes('Female') || voice.name.includes('Google'))
-            );
-          }
-          
-          // Final fallback to any English voice
-          if (!selectedVoice) {
-            selectedVoice = voices.find(voice => voice.lang.startsWith('en'));
-          }
-          
-          if (selectedVoice) {
-            utterance.voice = selectedVoice;
-            console.log('Using voice:', selectedVoice.name, 'pitch:', utterance.pitch, 'rate:', utterance.rate);
+            
+            // Fallback to any English voice if preferred not found
+            if (!selectedVoice) {
+              selectedVoice = voices.find(voice =>
+                voice.lang.startsWith('en') && (voice.name.includes('Female') || voice.name.includes('Google'))
+              );
+            }
+            
+            // Final fallback to any English voice
+            if (!selectedVoice) {
+              selectedVoice = voices.find(voice => voice.lang.startsWith('en'));
+            }
+            
+            if (selectedVoice) {
+              utterance.voice = selectedVoice;
+              console.log('Using voice:', selectedVoice.name, 'pitch:', utterance.pitch, 'rate:', utterance.rate);
+            } else {
+              console.warn('No suitable voice found, using default');
+            }
+            
+            speechSynthesis.speak(utterance);
+            console.log('Narration started successfully');
           } else {
-            console.warn('No suitable voice found, using default');
+            console.log('No narration text available');
           }
-          
-          speechSynthesis.speak(utterance);
-          console.log('Narration started successfully');
         } else {
-          console.log('No narration text available');
+          console.log('Narration muted or speech synthesis not supported');
         }
-      } else {
-        console.log('Narration muted or speech synthesis not supported');
+      } catch (e) {
+        console.error('Error during narration:', e);
       }
-    } catch (e) {
-      console.error('Error during narration:', e);
-    }
-  }, 2000);
+    }, 2000);
 
-  // RESOLUTION (~4000ms): Complete flashback sequence
-  flashbackTimerDone = setTimeout(() => {
-    console.log('Flashback resolution - cleaning up');
-    isFlashbackPlaying = false;
-    els.camera.classList.remove('flashback-cam');
-    
-    try {
-      if (els.fogBackdrop) {
-        els.fogBackdrop.classList.remove('active');
-        console.log('Fog background deactivated');
+    // RESOLUTION (~4000ms): Complete flashback sequence
+    flashbackTimerDone = setTimeout(() => {
+      console.log('Flashback resolution - cleaning up');
+      isFlashbackPlaying = false;
+      els.camera.classList.remove('flashback-cam');
+      
+      try {
+        if (els.fogBackdrop) {
+          els.fogBackdrop.classList.remove('active');
+          console.log('Fog background deactivated');
+        }
+      } catch (e) {
+        console.error('Error deactivating fog background:', e);
       }
-    } catch (e) {
-      console.error('Error deactivating fog background:', e);
-    }
-    
-    els.timeFlashbackFx.classList.remove('flashback-active');
-    els.photo.classList.remove('flashback-photo-settle');
-    els.scanBottomBar.classList.remove('flashback-ui-reveal');
-    els.photo.style.opacity = targetOpacity;
-    if (els.particlesLayer) els.particlesLayer.innerHTML = '';
-    if (typeof onComplete === 'function') onComplete();
-  }, 4000);
+      
+      els.timeFlashbackFx.classList.remove('flashback-active');
+      els.photo.classList.remove('flashback-photo-settle');
+      els.scanBottomBar.classList.remove('flashback-ui-reveal');
+      els.photo.style.opacity = targetOpacity;
+      if (els.particlesLayer) els.particlesLayer.innerHTML = '';
+      if (typeof onComplete === 'function') onComplete();
+    }, 4000);
+  } catch (e) {
+    console.error('Error in playTimeFlashback:', e);
+  }
 }
 
 /* ---------- Navigation & Mode Switcher ---------- */
