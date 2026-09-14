@@ -946,6 +946,132 @@ if ('serviceWorker' in navigator) {
 // Initial status update
 updateOnlineStatus();
 
+/* ---------- Whimsical Fantasy Storyteller Voice Narration Engine ---------- */
+function selectStorytellerVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = speechSynthesis.getVoices();
+  if (!voices || voices.length === 0) return null;
+
+  // Priority order for whimsical / fantasy storyteller friendly female voices
+  const preferredVoiceNames = [
+    'Samantha',           // macOS / iOS friendly female voice
+    'Victoria',           // macOS female voice
+    'Microsoft Aria',     // Natural soft female voice
+    'Microsoft Jenny',    // Friendly female voice
+    'Microsoft Zira',     // Female voice
+    'Google US English',  // Google female voice
+    'Google UK English Female',
+    'Karen',              // Australian female voice
+    'Moira',              // Irish female voice
+    'Tessa'               // South African female voice
+  ];
+
+  // 1. Try preferred voices
+  for (const preferredName of preferredVoiceNames) {
+    const found = voices.find(v => v.name.toLowerCase().includes(preferredName.toLowerCase()));
+    if (found) return found;
+  }
+
+  // 2. Search for any English voice with "Female" or "Samantha"
+  const femaleVoice = voices.find(v =>
+    v.lang.startsWith('en') && (
+      v.name.toLowerCase().includes('female') ||
+      v.name.toLowerCase().includes('samantha')
+    )
+  );
+  if (femaleVoice) return femaleVoice;
+
+  // 3. Fallback: Any English voice
+  const englishVoice = voices.find(v => v.lang.startsWith('en'));
+  if (englishVoice) return englishVoice;
+
+  // 4. Default voice fallback
+  return voices.find(v => v.default) || voices[0] || null;
+}
+
+function configureStorytellerVoice(utterance) {
+  // Whimsical storyteller voice settings: higher/lighter pitch (1.3) & slow pacing (0.75)
+  utterance.pitch = 1.3;  // Higher/lighter, more playful
+  utterance.rate = 0.75;  // Slower than default 1.0 for children's fantasy storytelling pace
+  utterance.volume = 0.95;
+
+  const voice = selectStorytellerVoice();
+  if (voice) {
+    utterance.voice = voice;
+    console.log('Selected storyteller voice:', voice.name, 'pitch:', utterance.pitch, 'rate:', utterance.rate);
+  } else {
+    console.warn('No specific voice matched, using default voice with pitch:', utterance.pitch, 'rate:', utterance.rate);
+  }
+
+  return utterance;
+}
+
+function configureFairytaleVoice(utterance) {
+  return configureStorytellerVoice(utterance);
+}
+
+function speakNarration(narrationText) {
+  if (isNarrationMuted || !('speechSynthesis' in window) || !narrationText) {
+    return;
+  }
+
+  function doSpeak() {
+    try {
+      speechSynthesis.cancel(); // Cancel any in-progress utterance
+      const utterance = new SpeechSynthesisUtterance(narrationText);
+      configureStorytellerVoice(utterance);
+      speechSynthesis.speak(utterance);
+      console.log('Storyteller narration started successfully');
+    } catch (e) {
+      console.error('Error during storyteller narration:', e);
+    }
+  }
+
+  // Handle asynchronous voice loading (especially on mobile devices)
+  const currentVoices = speechSynthesis.getVoices();
+  if (currentVoices && currentVoices.length > 0) {
+    doSpeak();
+  } else {
+    console.log('Voices not loaded yet, waiting for voiceschanged event before speaking...');
+    let speaksStarted = false;
+    const handleVoicesChanged = () => {
+      if (speaksStarted) return;
+      speaksStarted = true;
+      if (typeof speechSynthesis.removeEventListener === 'function') {
+        speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+      }
+      doSpeak();
+    };
+
+    if (typeof speechSynthesis.addEventListener === 'function') {
+      speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+    } else {
+      speechSynthesis.onvoiceschanged = handleVoicesChanged;
+    }
+
+    // Timeout fallback after 600ms in case voiceschanged event doesn't fire
+    setTimeout(() => {
+      if (!speaksStarted) {
+        speaksStarted = true;
+        if (typeof speechSynthesis.removeEventListener === 'function') {
+          speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        }
+        doSpeak();
+      }
+    }, 600);
+  }
+}
+
+// Pre-load voices on page initialization
+if ('speechSynthesis' in window) {
+  speechSynthesis.getVoices();
+  if (typeof speechSynthesis.addEventListener === 'function') {
+    speechSynthesis.addEventListener('voiceschanged', () => {
+      speechSynthesis.getVoices();
+    });
+  }
+}
+
 /* ---------- Time Flashback Automatic Animation Engine (Pensieve Magic) ---------- */
 let isFlashbackPlaying = false;
 let flashbackTimerA = null;
@@ -957,6 +1083,9 @@ function stopFlashback() {
   if (flashbackTimerA) clearTimeout(flashbackTimerA);
   if (flashbackTimerB) clearTimeout(flashbackTimerB);
   if (flashbackTimerDone) clearTimeout(flashbackTimerDone);
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+  }
   els.camera.classList.remove('flashback-cam');
   els.timeFlashbackFx.classList.remove('flashback-active');
   els.photo.classList.remove('flashback-photo-settle');
@@ -1077,67 +1206,15 @@ function playTimeFlashback({
 
       // Ghost Guide narration
       try {
-        if (!isNarrationMuted && 'speechSynthesis' in window) {
-          console.log('Starting narration with text:', narration || caption);
-          speechSynthesis.cancel(); // Cancel any in-progress utterance
-
+        if (!isNarrationMuted) {
           const narrationText = narration || caption;
           if (narrationText) {
-            const utterance = new SpeechSynthesisUtterance(narrationText);
-            
-            // Apply unified fairytale voice configuration
-            configureFairytaleVoice(utterance);
-
-            // Try to select the best voice for fairytale narration
-            const voices = speechSynthesis.getVoices();
-            console.log('Available voices:', voices.length);
-            
-            // Priority order for voice selection
-            const preferredVoices = [
-              'Microsoft Aria',      // Soft female voice
-              'Microsoft Jenny',    // Natural female voice  
-              'Microsoft Zira',     // Female voice
-              'Samantha',           // macOS female voice
-              'Victoria',           // macOS female voice
-              'Google US English',  // Google female voice
-              'Microsoft David',    // Male voice fallback
-            ];
-            
-            let selectedVoice = null;
-            for (const preferredName of preferredVoices) {
-              const found = voices.find(voice => voice.name === preferredName);
-              if (found) {
-                selectedVoice = found;
-                break;
-              }
-            }
-            
-            // Fallback to any English voice if preferred not found
-            if (!selectedVoice) {
-              selectedVoice = voices.find(voice =>
-                voice.lang.startsWith('en') && (voice.name.includes('Female') || voice.name.includes('Google'))
-              );
-            }
-            
-            // Final fallback to any English voice
-            if (!selectedVoice) {
-              selectedVoice = voices.find(voice => voice.lang.startsWith('en'));
-            }
-            
-            if (selectedVoice) {
-              utterance.voice = selectedVoice;
-              console.log('Using voice:', selectedVoice.name, 'pitch:', utterance.pitch, 'rate:', utterance.rate);
-            } else {
-              console.warn('No suitable voice found, using default');
-            }
-            
-            speechSynthesis.speak(utterance);
-            console.log('Narration started successfully');
+            speakNarration(narrationText);
           } else {
             console.log('No narration text available');
           }
         } else {
-          console.log('Narration muted or speech synthesis not supported');
+          console.log('Narration muted');
         }
       } catch (e) {
         console.error('Error during narration:', e);
@@ -1915,17 +1992,6 @@ function simpleChecksum(embedding) {
   return sum.toFixed(6);
 }
 
-// SINGLE unified function for fairytale voice configuration
-// This ensures consistent voice settings across all narration calls
-function configureFairytaleVoice(utterance) {
-  // Fairytale voice settings - gentle, warm, peaceful
-  utterance.pitch = 1.15; // Higher for gentleness and warmth
-  utterance.rate = 0.75; // Slower for storytelling pace (fairytale style)
-  utterance.volume = 0.9; // Slightly reduced volume for gentleness
-  
-  return utterance;
-}
-
 // Clear all CLIP cache - use this when debugging or after logic changes
 function clearAllClipCache() {
   console.log('Clearing all CLIP cache...');
@@ -2099,7 +2165,7 @@ function logAvailableVoices() {
   return voices;
 }
 
-function testVoiceConfiguration(voiceName, pitch, rate, testText = "Welcome to Timeglass, where history comes alive through your camera.") {
+function testVoiceConfiguration(voiceName, pitch = 1.3, rate = 0.75, testText = "Welcome to Timeglass, where history comes alive through your camera.") {
   if (!('speechSynthesis' in window)) {
     console.error('Speech synthesis not supported');
     return;
@@ -2118,8 +2184,8 @@ function testVoiceConfiguration(voiceName, pitch, rate, testText = "Welcome to T
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(testText);
   utterance.voice = selectedVoice;
-  // Apply unified fairytale voice configuration
-  configureFairytaleVoice(utterance);
+  // Apply unified storyteller voice configuration
+  configureStorytellerVoice(utterance);
   // Override with custom values if specified for testing
   if (pitch !== undefined) utterance.pitch = pitch;
   if (rate !== undefined) utterance.rate = rate;
@@ -2140,17 +2206,15 @@ function compareVoiceConfigs(testText = "Welcome to Timeglass, where history com
   
   // Try different configurations with preferred voices
   const configs = [
-    // English voices to try
-    { voiceName: 'Microsoft David', pitch: 0.9, rate: 0.75 },
-    { voiceName: 'Microsoft Zira', pitch: 1.15, rate: 0.75 },
-    { voiceName: 'Google US English', pitch: 1.1, rate: 0.8 },
-    { voiceName: 'Samantha', pitch: 1.15, rate: 0.75 },
-    { voiceName: 'Victoria', pitch: 1.2, rate: 0.7 },
-    // Gentle female configurations
-    { voiceName: 'Microsoft Aria', pitch: 1.1, rate: 0.8 },
-    { voiceName: 'Microsoft Jenny', pitch: 1.0, rate: 0.75 },
+    // Whimsical storyteller configurations
+    { voiceName: 'Samantha', pitch: 1.3, rate: 0.75 },
+    { voiceName: 'Victoria', pitch: 1.3, rate: 0.75 },
+    { voiceName: 'Microsoft Aria', pitch: 1.3, rate: 0.75 },
+    { voiceName: 'Microsoft Jenny', pitch: 1.3, rate: 0.75 },
+    { voiceName: 'Microsoft Zira', pitch: 1.3, rate: 0.75 },
+    { voiceName: 'Google US English', pitch: 1.3, rate: 0.75 },
     // Generic fallbacks
-    { voiceName: null, pitch: 1.15, rate: 0.75 }, // Default
+    { voiceName: null, pitch: 1.3, rate: 0.75 }, // Default
   ];
   
   let configIndex = 0;
