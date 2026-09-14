@@ -276,9 +276,9 @@
     pointer-events: none;
     z-index: 0;
     background: 
-      radial-gradient(ellipse at 20% 30%, rgba(201, 146, 79, 0.08) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 70%, rgba(201, 146, 79, 0.05) 0%, transparent 40%),
-      radial-gradient(ellipse at 50% 50%, rgba(12, 10, 8, 0.95) 0%, rgba(8, 6, 4, 0.98) 100%);
+      radial-gradient(ellipse at 20% 30%, rgba(201, 146, 79, 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(201, 146, 79, 0.10) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 50%, rgba(12, 10, 8, 0.90) 0%, rgba(8, 6, 4, 0.95) 100%);
     transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1);
   }
   #fog-backdrop.active {
@@ -288,8 +288,8 @@
     content: '';
     position: absolute; inset: 0;
     background: 
-      radial-gradient(ellipse at 30% 20%, rgba(201, 146, 79, 0.03) 0%, transparent 60%),
-      radial-gradient(ellipse at 70% 80%, rgba(201, 146, 79, 0.02) 0%, transparent 50%);
+      radial-gradient(ellipse at 30% 20%, rgba(201, 146, 79, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 80%, rgba(201, 146, 79, 0.05) 0%, transparent 50%);
     animation: fogDrift 8s ease-in-out infinite alternate;
   }
   @keyframes fogDrift {
@@ -861,7 +861,11 @@ const LOCATION_DESCRIPTIONS = {
   'saotome': 'a photo of São Tomé heritage quarter, historic riverside neighborhood with traditional Portuguese and Hindu houses in Panjim Goa',
   'tobacco-square': 'a photo of Tobacco Square Largo dos Tabaqueiros, historic public square with General Post Office and São Tomé Chapel in Panjim Goa',
   'azadmaidan': 'a photo of Azad Maidan Freedom Ground, historic public square with Martyrs Memorial monument in Panjim Goa',
-  'casadempo': 'a photo of Casa Dempo, traditional Hindu heritage house on MG Road with distinctive colonial architecture in Panjim Goa'
+  'casadempo': 'a photo of Casa Dempo, traditional Hindu heritage house on MG Road with distinctive colonial architecture in Panjim Goa',
+  'stfrancisxavier': 'a photo of Chapel of St. Francis Xavier, historic church building near Basilica of Bom Jesus in Old Goa',
+  'massano': 'a photo of Escola Primária Massano de Amorim, historic primary school building with decorative facade in Panjim Goa',
+  'casabharat': 'a photo of Casa Bharat, Portuguese-era heritage house operating as heritage inn in Fontainhas Panjim Goa',
+  'hotelimperial': 'a photo of Hotel Imperial Predio Abilio Coelho Pereira, historic building on Mandovi riverfront waterfront in Panjim Goa'
 };
 
 const els = {
@@ -1000,32 +1004,54 @@ function playTimeFlashback({
   onSettle = null,
   onComplete = null
 } = {}) {
-  stopFlashback();
-  isFlashbackPlaying = true;
+  console.log('playTimeFlashback called with:', { photoUrl, name, caption, era, narration });
+  
+  try {
+    stopFlashback();
+    isFlashbackPlaying = true;
 
-  // 1. Prepare target photo
-  if (photoUrl) {
-    currentPhotoUrl = photoUrl;
-    els.photo.src = photoUrl;
-  }
-  els.photo.style.setProperty('--fb-target-opacity', targetOpacity);
+    // 1. Prepare target photo
+    if (photoUrl) {
+      currentPhotoUrl = photoUrl;
+      els.photo.src = photoUrl;
+    }
+    els.photo.style.setProperty('--fb-target-opacity', targetOpacity);
 
-  // 2. Hide caption & era bar initially (Beat 4 delayed entrance)
-  els.scanBottomBar.classList.add('flashback-ui-pending');
+    // 2. Hide caption & era bar initially (Beat 4 delayed entrance)
+    els.scanBottomBar.classList.add('flashback-ui-pending');
 
-  // 3. Spawn floating golden memory dust/embers
-  spawnFloatingEmbers();
+    // 3. Spawn floating golden memory dust/embers
+    spawnFloatingEmbers();
 
-  // Trigger reflow for animations
-  void els.camera.offsetWidth;
-  void els.fogBackdrop.offsetWidth;
-  void els.timeFlashbackFx.offsetWidth;
-  void els.photo.offsetWidth;
+    // Trigger reflow for animations with error handling
+    try {
+      void els.camera.offsetWidth;
+      if (els.fogBackdrop) {
+        void els.fogBackdrop.offsetWidth;
+      } else {
+        console.error('fogBackdrop element is null!');
+      }
+      void els.timeFlashbackFx.offsetWidth;
+      void els.photo.offsetWidth;
+    } catch (e) {
+      console.error('Error during reflow trigger:', e);
+    }
 
-  // BEATS 1 & 2 (0 - 550ms): Camera fades out, fog fades in, and swirling Pensieve mist begins rotating & expanding
-  els.camera.classList.add('flashback-cam');
-  els.fogBackdrop.classList.add('active');
-  els.timeFlashbackFx.classList.add('flashback-active');
+    // BEATS 1 & 2 (0 - 550ms): Camera fades out, fog fades in, and swirling Pensieve mist begins rotating & expanding
+    els.camera.classList.add('flashback-cam');
+    
+    try {
+      if (els.fogBackdrop) {
+        els.fogBackdrop.classList.add('active');
+        console.log('Fog background activated');
+      } else {
+        console.error('Cannot activate fog - element is null');
+      }
+    } catch (e) {
+      console.error('Error activating fog background:', e);
+    }
+    
+    els.timeFlashbackFx.classList.add('flashback-active');
 
   // BEAT 3 (~800ms): Historical photo smoothly materializes through the golden mist (oldest era)
   flashbackTimerA = setTimeout(() => {
@@ -1050,67 +1076,89 @@ function playTimeFlashback({
     els.scanBottomBar.classList.add('flashback-ui-reveal');
 
     // Ghost Guide narration
-    if (!isNarrationMuted && 'speechSynthesis' in window) {
-      speechSynthesis.cancel(); // Cancel any in-progress utterance
+    try {
+      if (!isNarrationMuted && 'speechSynthesis' in window) {
+        console.log('Starting narration with text:', narration || caption);
+        speechSynthesis.cancel(); // Cancel any in-progress utterance
 
-      const narrationText = narration || caption;
-      if (narrationText) {
-        const utterance = new SpeechSynthesisUtterance(narrationText);
-        
-        // Fairytale voice configuration - gentle, warm, peaceful
-        utterance.pitch = 1.1; // Slightly higher for gentleness
-        utterance.rate = 0.8; // Slower for storytelling pace (sweet spot to avoid robotic stretching)
+        const narrationText = narration || caption;
+        if (narrationText) {
+          const utterance = new SpeechSynthesisUtterance(narrationText);
+          
+          // Apply unified fairytale voice configuration
+          configureFairytaleVoice(utterance);
 
-        // Try to select the best voice for fairytale narration
-        const voices = speechSynthesis.getVoices();
-        
-        // Priority order for voice selection
-        const preferredVoices = [
-          'Microsoft Aria',      // Soft female voice
-          'Microsoft Jenny',    // Natural female voice  
-          'Microsoft Zira',     // Female voice
-          'Samantha',           // macOS female voice
-          'Victoria',           // macOS female voice
-          'Google US English',  // Google female voice
-          'Microsoft David',    // Male voice fallback
-        ];
-        
-        let selectedVoice = null;
-        for (const preferredName of preferredVoices) {
-          const found = voices.find(voice => voice.name === preferredName);
-          if (found) {
-            selectedVoice = found;
-            break;
+          // Try to select the best voice for fairytale narration
+          const voices = speechSynthesis.getVoices();
+          console.log('Available voices:', voices.length);
+          
+          // Priority order for voice selection
+          const preferredVoices = [
+            'Microsoft Aria',      // Soft female voice
+            'Microsoft Jenny',    // Natural female voice  
+            'Microsoft Zira',     // Female voice
+            'Samantha',           // macOS female voice
+            'Victoria',           // macOS female voice
+            'Google US English',  // Google female voice
+            'Microsoft David',    // Male voice fallback
+          ];
+          
+          let selectedVoice = null;
+          for (const preferredName of preferredVoices) {
+            const found = voices.find(voice => voice.name === preferredName);
+            if (found) {
+              selectedVoice = found;
+              break;
+            }
           }
+          
+          // Fallback to any English voice if preferred not found
+          if (!selectedVoice) {
+            selectedVoice = voices.find(voice =>
+              voice.lang.startsWith('en') && (voice.name.includes('Female') || voice.name.includes('Google'))
+            );
+          }
+          
+          // Final fallback to any English voice
+          if (!selectedVoice) {
+            selectedVoice = voices.find(voice => voice.lang.startsWith('en'));
+          }
+          
+          if (selectedVoice) {
+            utterance.voice = selectedVoice;
+            console.log('Using voice:', selectedVoice.name, 'pitch:', utterance.pitch, 'rate:', utterance.rate);
+          } else {
+            console.warn('No suitable voice found, using default');
+          }
+          
+          speechSynthesis.speak(utterance);
+          console.log('Narration started successfully');
+        } else {
+          console.log('No narration text available');
         }
-        
-        // Fallback to any English voice if preferred not found
-        if (!selectedVoice) {
-          selectedVoice = voices.find(voice =>
-            voice.lang.startsWith('en') && (voice.name.includes('Female') || voice.name.includes('Google'))
-          );
-        }
-        
-        // Final fallback to any English voice
-        if (!selectedVoice) {
-          selectedVoice = voices.find(voice => voice.lang.startsWith('en'));
-        }
-        
-        if (selectedVoice) {
-          utterance.voice = selectedVoice;
-          console.log('Using voice:', selectedVoice.name, 'pitch:', utterance.pitch, 'rate:', utterance.rate);
-        }
-
-        speechSynthesis.speak(utterance);
+      } else {
+        console.log('Narration muted or speech synthesis not supported');
       }
+    } catch (e) {
+      console.error('Error during narration:', e);
     }
   }, 2000);
 
   // RESOLUTION (~4000ms): Complete flashback sequence
   flashbackTimerDone = setTimeout(() => {
+    console.log('Flashback resolution - cleaning up');
     isFlashbackPlaying = false;
     els.camera.classList.remove('flashback-cam');
-    els.fogBackdrop.classList.remove('active');
+    
+    try {
+      if (els.fogBackdrop) {
+        els.fogBackdrop.classList.remove('active');
+        console.log('Fog background deactivated');
+      }
+    } catch (e) {
+      console.error('Error deactivating fog background:', e);
+    }
+    
     els.timeFlashbackFx.classList.remove('flashback-active');
     els.photo.classList.remove('flashback-photo-settle');
     els.scanBottomBar.classList.remove('flashback-ui-reveal');
@@ -1864,6 +1912,17 @@ function simpleChecksum(embedding) {
   return sum.toFixed(6);
 }
 
+// SINGLE unified function for fairytale voice configuration
+// This ensures consistent voice settings across all narration calls
+function configureFairytaleVoice(utterance) {
+  // Fairytale voice settings - gentle, warm, peaceful
+  utterance.pitch = 1.15; // Higher for gentleness and warmth
+  utterance.rate = 0.75; // Slower for storytelling pace (fairytale style)
+  utterance.volume = 0.9; // Slightly reduced volume for gentleness
+  
+  return utterance;
+}
+
 // Clear all CLIP cache - use this when debugging or after logic changes
 function clearAllClipCache() {
   console.log('Clearing all CLIP cache...');
@@ -2056,8 +2115,11 @@ function testVoiceConfiguration(voiceName, pitch, rate, testText = "Welcome to T
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(testText);
   utterance.voice = selectedVoice;
-  utterance.pitch = pitch;
-  utterance.rate = rate;
+  // Apply unified fairytale voice configuration
+  configureFairytaleVoice(utterance);
+  // Override with custom values if specified for testing
+  if (pitch !== undefined) utterance.pitch = pitch;
+  if (rate !== undefined) utterance.rate = rate;
   
   speechSynthesis.speak(utterance);
 }
@@ -2112,6 +2174,9 @@ function compareVoiceConfigs(testText = "Welcome to Timeglass, where history com
     speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(testText);
     if (voice) utterance.voice = voice;
+    // Apply unified fairytale voice configuration as base
+    configureFairytaleVoice(utterance);
+    // Override with custom values for comparison testing
     utterance.pitch = config.pitch;
     utterance.rate = config.rate;
     
@@ -2130,6 +2195,24 @@ function compareVoiceConfigs(testText = "Welcome to Timeglass, where history com
 window.logAvailableVoices = logAvailableVoices;
 window.testVoiceConfiguration = testVoiceConfiguration;
 window.compareVoiceConfigs = compareVoiceConfigs;
+
+// Quick fog background test function
+function testFogBackground() {
+  console.log('Testing fog background...');
+  if (els.fogBackdrop) {
+    els.fogBackdrop.classList.add('active');
+    console.log('Fog background activated - should be visible now');
+    setTimeout(() => {
+      els.fogBackdrop.classList.remove('active');
+      console.log('Fog background deactivated after 3 seconds');
+    }, 3000);
+  } else {
+    console.error('fogBackdrop element not found!');
+  }
+}
+
+// Expose for debugging
+window.testFogBackground = testFogBackground;
 
 async function extractImageEmbedding(imageSourceUrlOrDataUrl) {
   let inputUrl = imageSourceUrlOrDataUrl;

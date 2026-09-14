@@ -3,8 +3,8 @@
     {
       "id": "mushtifund-old",
       "name": "Mushtifund Saunstha building",
-      "lat": 15.4965,
-      "lon": 73.8305,
+      "lat": 15.494255,
+      "lon": 73.834691,
       "heading": 250,
       "year": 1930,
       "photoUrl": "photos/mushtifund-old.jpg",
@@ -14,8 +14,8 @@
     {
       "id": "mushtifund-current",
       "name": "Bookworm Trust & Library",
-      "lat": 15.4965,
-      "lon": 73.8305,
+      "lat": 15.494255,
+      "lon": 73.834691,
       "heading": 250,
       "year": 2025,
       "photoUrl": "photos/mushtifund-current.jpg",
@@ -24,8 +24,8 @@
     {
       "id": "uspa-old",
       "name": "Mahatma Gandhi Road building (Virani Corporation)",
-      "lat": 15.4975,
-      "lon": 73.828,
+      "lat": 15.500933,
+      "lon": 73.827659,
       "heading": 200,
       "year": 2000,
       "photoUrl": "photos/uspa-old.jpg",
@@ -34,21 +34,18 @@
     {
       "id": "uspa-current",
       "name": "U.S. Polo Assn., MG Road",
-      "lat": 15.4975,
-      "lon": 73.828,
+      "lat": 15.500933,
+      "lon": 73.827659,
       "heading": 200,
       "year": 2024,
       "photoUrl": "photos/uspa-current.jpg",
       "caption": "Now a U.S. Polo Assn. store, Survey No. 1625, MG Road, Panaji — beside Virani Corporation"
     },
-
-
-
     {
       "id": "panjim-church-old",
       "name": "Panaji Church (Our Lady of the Immaculate Conception)",
-      "lat": 15.4989,
-      "lon": 73.8278,
+      "lat": 15.498618,
+      "lon": 73.829579,
       "heading": 0,
       "year": 1990,
       "photoUrl": "photos/panjim-church-old.jpg",
@@ -58,18 +55,29 @@
     {
       "id": "panjim-church-current",
       "name": "Panaji Church (Our Lady of the Immaculate Conception)",
-      "lat": 15.4989,
-      "lon": 73.8278,
+      "lat": 15.498618,
+      "lon": 73.829579,
       "heading": 0,
       "year": 2024,
       "photoUrl": "photos/panjim-church-current.jpg",
       "caption": "The same church and staircase today, largely unchanged in form since it was completed in 1619 and rebuilt in Baroque style over the centuries"
     },
     {
+      "id": "panjim-church-1900",
+      "locKey": "panjim-church",
+      "name": "Panaji Church (Our Lady of the Immaculate Conception)",
+      "lat": 15.498618,
+      "lon": 73.829579,
+      "heading": 0,
+      "year": 1900,
+      "photoUrl": "photos/panjim-church-1900.jpg",
+      "caption": "An earlier view of Panjim's iconic church, completed in 1619 and rebuilt in Baroque style over the centuries. YEAR PLACEHOLDER — replace with your source's actual date. NOTE: consider whether this duplicate entry (3rd photo of same building) should be merged/removed to avoid embedding-matching confusion."
+    },
+    {
       "id": "adilshah-old",
       "name": "Adil Shah Palace",
-      "lat": 15.4995,
-      "lon": 73.8298,
+      "lat": 15.500765,
+      "lon": 73.829872,
       "heading": 90,
       "year": 1850,
       "photoUrl": "photos/adilshah-old.png",
@@ -79,8 +87,8 @@
     {
       "id": "adilshah-current",
       "name": "Adil Shah Palace",
-      "lat": 15.4995,
-      "lon": 73.8298,
+      "lat": 15.500765,
+      "lon": 73.829872,
       "heading": 90,
       "year": 2024,
       "photoUrl": "photos/adilshah-current.png",
@@ -90,8 +98,8 @@
       "id": "saotome-old",
       "locKey": "saotome",
       "name": "São Tomé",
-      "lat": 15.4998,
-      "lon": 73.8290,
+      "lat": 15.499561,
+      "lon": 73.832240,
       "heading": 180,
       "year": 1900,
       "photoUrl": "photos/saotome-old.jpg",
@@ -102,8 +110,8 @@
       "id": "saotome-current",
       "locKey": "saotome",
       "name": "São Tomé",
-      "lat": 15.4998,
-      "lon": 73.8290,
+      "lat": 15.499561,
+      "lon": 73.832240,
       "heading": 180,
       "year": 2024,
       "photoUrl": "photos/saotome-current.jpg",
@@ -113,8 +121,8 @@
       "id": "tobacco-square-old",
       "locKey": "tobacco-square",
       "name": "Tobacco Square",
-      "lat": 15.4993,
-      "lon": 73.8292,
+      "lat": 15.499380,
+      "lon": 73.832604,
       "heading": 180,
       "year": 1900,
       "photoUrl": "photos/tobacco-square-old.jpg",
@@ -125,8 +133,8 @@
       "id": "tobacco-square-current",
       "locKey": "tobacco-square",
       "name": "Tobacco Square",
-      "lat": 15.4993,
-      "lon": 73.8292,
+      "lat": 15.499380,
+      "lon": 73.832604,
       "heading": 180,
       "year": 2024,
       "photoUrl": "photos/tobacco-square-current.jpg",
@@ -141,7 +149,7 @@
       "heading": 0,
       "year": 1910,
       "photoUrl": "photos/azadmaidan-old.jpg",
-      "caption": "Originally Largo Afonso de Albuquerque (Praça de Sete Janelas), built 1843 with a domed monument to the Portuguese general. YEAR PLACEHOLDER — replace with your source's actual date."
+      "caption": "Originally Largo Afonso de Albuquerque (Praça de Sete Janelas), built 1843 with a domed monument to the Portuguese general. YEAR PLACEHOLDER — replace with your source's actual date. COORDINATES STILL UNVERIFIED — pin on Google Maps before deploying."
     },
     {
       "id": "azadmaidan-current",
@@ -152,7 +160,7 @@
       "heading": 0,
       "year": 2024,
       "photoUrl": "photos/azadmaidan-current.jpg",
-      "caption": "Renamed Azad Maidan ('Freedom Ground') after Goa's liberation — now home to the Martyrs' Memorial honoring Tristão de Bragança Cunha and 67 named freedom fighters."
+      "caption": "Renamed Azad Maidan ('Freedom Ground') after Goa's liberation — now home to the Martyrs' Memorial honoring Tristão de Bragança Cunha and 67 named freedom fighters. COORDINATES STILL UNVERIFIED — pin on Google Maps before deploying."
     },
     {
       "id": "casadempo-old",
@@ -163,7 +171,7 @@
       "heading": 90,
       "year": 1880,
       "photoUrl": "photos/casadempo-old.jpg",
-      "caption": "Casa Dempo on MG Road (then Afonso de Albuquerque Road), a traditional Hindu heritage house established around 1810. Photo reportedly c.1880, per Central Library archives — verify against your own source.",
+      "caption": "Casa Dempo on MG Road (then Afonso de Albuquerque Road), a traditional Hindu heritage house established around 1810. Photo reportedly c.1880, per Central Library archives — verify against your own source. COORDINATES STILL UNVERIFIED — pin on Google Maps before deploying.",
       "narration": "Casa Dempo has stood on this road since 1810, a grand Hindu heritage house representing Goa's architectural diversity."
     },
     {
@@ -175,20 +183,87 @@
       "heading": 90,
       "year": 2024,
       "photoUrl": "photos/casadempo-current.jpg",
-      "caption": "Casa Dempo still stands on MG Road today, near the old Government Printing Press building."
+      "caption": "Casa Dempo still stands on MG Road today, near the old Government Printing Press building. COORDINATES STILL UNVERIFIED — pin on Google Maps before deploying."
     },
-
     {
-      "id": "panjim-church-1900",
-      "locKey": "panjim-church",
-      "name": "Panaji Church (Our Lady of the Immaculate Conception)",
-      "lat": 15.4989,
-      "lon": 73.8278,
+      "id": "stfrancisxavier-old",
+      "name": "Chapel of St. Francis Xavier",
+      "lat": 15.5015,
+      "lon": 73.9128,
       "heading": 0,
       "year": 1900,
-      "photoUrl": "photos/panjim-church-1900.jpg",
-      "caption": "An earlier view of Panjim's iconic church, completed in 1619 and rebuilt in Baroque style over the centuries. YEAR PLACEHOLDER — replace with your source's actual date."
+      "photoUrl": "photos/stfrancisxavier-old.jpg",
+      "caption": "The Chapel of St. Francis Xavier, built on the grounds of the former St. Paul's College in Old Goa — rebuilt in 1884 after the original fell to ruin in 1570. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying."
+    },
+    {
+      "id": "stfrancisxavier-current",
+      "name": "Chapel of St. Francis Xavier",
+      "lat": 15.5015,
+      "lon": 73.9128,
+      "heading": 0,
+      "year": 2024,
+      "photoUrl": "photos/stfrancisxavier-current.jpg",
+      "caption": "The chapel today, still standing near the Basilica of Bom Jesus, dedicated to the saint after his canonization in 1622. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying."
+    },
+    {
+      "id": "massano-old",
+      "name": "Escola Primária Massano de Amorim",
+      "lat": 15.4990,
+      "lon": 73.8285,
+      "heading": 0,
+      "year": 1950,
+      "photoUrl": "photos/massano-old.jpg",
+      "caption": "Escola Primária Massano de Amorim, built c.1928 as a primary school in Panjim — noted for its eclectic decorative facade and corner-placed main entrance. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying."
+    },
+    {
+      "id": "massano-current",
+      "name": "Escola Primária Massano de Amorim",
+      "lat": 15.4990,
+      "lon": 73.8285,
+      "heading": 0,
+      "year": 2024,
+      "photoUrl": "photos/massano-current.jpg",
+      "caption": "The same building today, now home to the Office of Central Education. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying."
+    },
+    {
+      "id": "casabharat-old",
+      "name": "Casa Bharat",
+      "lat": 15.4970,
+      "lon": 73.8305,
+      "heading": 0,
+      "year": 1950,
+      "photoUrl": "photos/casabharat-old.jpg",
+      "caption": "A Portuguese-era heritage house in the Fontainhas quarter of Panjim, now run as a heritage inn. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying. NOTE: visually similar to Casa Dempo — flag for similarity-margin check."
+    },
+    {
+      "id": "casabharat-current",
+      "name": "Casa Bharat",
+      "lat": 15.4970,
+      "lon": 73.8305,
+      "heading": 0,
+      "year": 2024,
+      "photoUrl": "photos/casabharat-current.jpg",
+      "caption": "Casa Bharat today, operating as a heritage inn in Fontainhas, near Panjim Church. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying. NOTE: visually similar to Casa Dempo — flag for similarity-margin check."
+    },
+    {
+      "id": "hotelimperial-old",
+      "name": "Hotel Imperial (Predio Abilio Coelho Pereira)",
+      "lat": 15.4998,
+      "lon": 73.8283,
+      "heading": 0,
+      "year": 1960,
+      "photoUrl": "photos/hotelimperial-old.jpg",
+      "caption": "The Predio Abilio Coelho Pereira building, historically known as Hotel Imperial, on Rua Dom João de Castro overlooking the Mandovi River waterfront. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying. NOTE: very close to Adil Shah Palace — verify real distance."
+    },
+    {
+      "id": "hotelimperial-current",
+      "name": "Hotel Imperial (Predio Abilio Coelho Pereira)",
+      "lat": 15.4998,
+      "lon": 73.8283,
+      "heading": 0,
+      "year": 2024,
+      "photoUrl": "photos/hotelimperial-current.jpg",
+      "caption": "The same building today, still standing on the Panjim waterfront near the Adil Shah Palace and Idalcão riverside stretch. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying. NOTE: very close to Adil Shah Palace — verify real distance."
     }
-
   ]
 }
