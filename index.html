@@ -792,10 +792,10 @@
     <div id="browse-cards-container" style="display:flex; flex-direction:column; gap:18px;"></div>
   </div>
 
-  <!-- Global Mode Switcher Navigation -->
+  <!-- Global Mode Switcher Navigation (Scan mode hidden when disabled) -->
   <div id="mode-nav">
-    <button class="mode-tab active" data-mode="scan">📡 Scan</button>
-    <button class="mode-tab" data-mode="snap">📸 Snap</button>
+    <button class="mode-tab" data-mode="scan" id="scan-tab-btn" style="display:none;">📡 Scan</button>
+    <button class="mode-tab active" data-mode="snap">📸 Snap</button>
     <button class="mode-tab" data-mode="browse">🏛️ Browse</button>
   </div>
 
@@ -809,13 +809,16 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-/* ---------- config ---------- */
+/* ---------- config & feature flags ---------- */
+// Scan mode disabled — needs rework, see 2026-09-14. Currently pans to nothing without detecting.
+const SCAN_MODE_ENABLED = false;
+
 const MATCH_RADIUS_M = 60;          // how close you must be to a point, in meters (Scan mode)
 const HEADING_CONE_DEG = 70;        // how far off-heading still counts as a match (Scan mode)
 const SNAP_MATCH_THRESHOLD = 0.42;  // Relaxed threshold for better reliability (was 0.48, too strict after recent changes)
 
 /* ---------- application state ---------- */
-let currentMode = 'scan'; // 'scan' | 'snap' | 'browse'
+let currentMode = SCAN_MODE_ENABLED ? 'scan' : 'snap'; // 'scan' | 'snap' | 'browse'
 let points = [];
 let eras = [];
 let activeEra = null;
@@ -1249,12 +1252,22 @@ function playTimeFlashback({
 }
 
 /* ---------- Navigation & Mode Switcher ---------- */
+// Scan mode disabled — needs rework, see 2026-09-14. Currently pans to nothing without detecting.
+if (!SCAN_MODE_ENABLED) {
+  const scanTab = document.querySelector('.mode-tab[data-mode="scan"]');
+  if (scanTab) scanTab.style.display = 'none';
+}
+
 document.querySelectorAll('.mode-tab').forEach(tab => {
   tab.addEventListener('click', () => switchMode(tab.dataset.mode));
 });
 
 async function switchMode(mode) {
-  if (currentMode === mode) return;
+  // If scan mode is disabled, redirect to snap mode
+  if (!SCAN_MODE_ENABLED && mode === 'scan') {
+    mode = 'snap';
+  }
+  if (currentMode === mode && els.startScreen.style.display === 'none') return;
   currentMode = mode;
 
   // Dismiss start screen if still showing
@@ -1431,14 +1444,19 @@ async function begin() {
   els.startError.textContent = '';
   try {
     await loadPoints();
-    // Start camera immediately
-    startCamera().catch(err => {
-      console.warn('Camera warning:', err);
-      els.status.textContent = 'Camera unavailable. Sensor mode active.';
-    });
-    await startSensors();
     els.startScreen.style.display = 'none';
-    requestTick();
+    if (SCAN_MODE_ENABLED) {
+      // Start camera immediately
+      startCamera().catch(err => {
+        console.warn('Camera warning:', err);
+        els.status.textContent = 'Camera unavailable. Sensor mode active.';
+      });
+      await startSensors();
+      requestTick();
+    } else {
+      // Direct user into Snap to Identify mode
+      await switchMode('snap');
+    }
   } catch (err) {
     console.error(err);
     els.startError.textContent = 'Could not start: ' + err.message + '. Check permissions and reload.';
@@ -1620,7 +1638,8 @@ function renderEraButtons(customEras = null, hideInitially = false) {
   });
 }
 
-/* ---------- Matching Math ---------- */
+/* ---------- Matching Math (Scan Mode Engine) ---------- */
+// Scan mode disabled — needs rework, see 2026-09-14. Currently pans to nothing without detecting.
 function haversineMeters(lat1, lon1, lat2, lon2) {
   const R = 6371000;
   const toRad = d => d * Math.PI / 180;
@@ -1704,8 +1723,9 @@ function findBestMatch() {
   };
 }
 
+// Scan mode disabled — needs rework, see 2026-09-14. Currently pans to nothing without detecting.
 function requestTick() {
-  if (tickQueued || currentMode !== 'scan') return;
+  if (!SCAN_MODE_ENABLED || tickQueued || currentMode !== 'scan') return;
   tickQueued = true;
   requestAnimationFrame(() => {
     tickQueued = false;
@@ -1715,7 +1735,7 @@ function requestTick() {
 
 /* ---------- Scan Mode Tick ---------- */
 function tick() {
-  if (currentMode !== 'scan') return;
+  if (!SCAN_MODE_ENABLED || currentMode !== 'scan') return;
   els.yearBadge.textContent = activeEra ?? '';
   const matchResult = findBestMatch();
   const match = matchResult ? matchResult.best : null;
@@ -1777,7 +1797,10 @@ function tick() {
   }
 }
 
-setInterval(requestTick, 500); // Increased frequency from 800ms to 500ms for more responsive matching
+// Scan mode interval loop parked behind feature flag
+if (SCAN_MODE_ENABLED) {
+  setInterval(requestTick, 500); // 500ms loop for matching
+}
 
 /* =========================================================================
    SNAP TO IDENTIFY (Multimodal Image + Text Semantic CLIP Engine)
@@ -2549,11 +2572,15 @@ function presentSnapResult(point, similarity) {
       els.snapCompBox.style.animation = 'fbUiFadeIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards';
     };
 
-    els.snapActionAr.textContent = 'View in AR Scan';
+    els.snapActionAr.textContent = SCAN_MODE_ENABLED ? 'View in AR Scan' : 'Browse Catalog';
     els.snapActionAr.onclick = () => {
       els.snapModal.classList.remove('visible');
-      activeEra = point.year;
-      switchMode('scan');
+      if (SCAN_MODE_ENABLED) {
+        activeEra = point.year;
+        switchMode('scan');
+      } else {
+        switchMode('browse');
+      }
     };
     els.snapActionClose.textContent = 'Snap Another';
     els.snapActionClose.onclick = () => {
@@ -2675,10 +2702,14 @@ function renderBrowseCatalog() {
     const arBtn = document.createElement('button');
     arBtn.className = 'btn-primary';
     arBtn.style.marginTop = '4px';
-    arBtn.textContent = 'Open in AR Scan';
+    arBtn.textContent = SCAN_MODE_ENABLED ? 'Open in AR Scan' : 'Snap Photo';
     arBtn.onclick = () => {
-      activeEra = currentCardPoint.year;
-      switchMode('scan');
+      if (SCAN_MODE_ENABLED) {
+        activeEra = currentCardPoint.year;
+        switchMode('scan');
+      } else {
+        switchMode('snap');
+      }
     };
 
     body.appendChild(title);
