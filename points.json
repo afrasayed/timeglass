@@ -192,7 +192,7 @@
       "lon": 73.9128,
       "heading": 0,
       "year": 1900,
-      "photoUrl": "photos/stfrancisxavier-old.jpg",
+      "photoUrl": "photos/stfrancisxavier-old.png",
       "caption": "The Chapel of St. Francis Xavier, built on the grounds of the former St. Paul's College in Old Goa — rebuilt in 1884 after the original fell to ruin in 1570. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying."
     },
     {
@@ -202,7 +202,7 @@
       "lon": 73.9128,
       "heading": 0,
       "year": 2024,
-      "photoUrl": "photos/stfrancisxavier-current.jpg",
+      "photoUrl": "photos/stfrancisxavier-current.png",
       "caption": "The chapel today, still standing near the Basilica of Bom Jesus, dedicated to the saint after his canonization in 1622. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying."
     },
     {
@@ -212,7 +212,7 @@
       "lon": 73.8285,
       "heading": 0,
       "year": 1950,
-      "photoUrl": "photos/massano-old.jpg",
+      "photoUrl": "photos/massano-old.png",
       "caption": "Escola Primária Massano de Amorim, built c.1928 as a primary school in Panjim — noted for its eclectic decorative facade and corner-placed main entrance. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying."
     },
     {
@@ -222,28 +222,8 @@
       "lon": 73.8285,
       "heading": 0,
       "year": 2024,
-      "photoUrl": "photos/massano-current.jpg",
+      "photoUrl": "photos/massano-current.png",
       "caption": "The same building today, now home to the Office of Central Education. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying."
-    },
-    {
-      "id": "casabharat-old",
-      "name": "Casa Bharat",
-      "lat": 15.4970,
-      "lon": 73.8305,
-      "heading": 0,
-      "year": 1950,
-      "photoUrl": "photos/casabharat-old.jpg",
-      "caption": "A Portuguese-era heritage house in the Fontainhas quarter of Panjim, now run as a heritage inn. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying. NOTE: visually similar to Casa Dempo — flag for similarity-margin check."
-    },
-    {
-      "id": "casabharat-current",
-      "name": "Casa Bharat",
-      "lat": 15.4970,
-      "lon": 73.8305,
-      "heading": 0,
-      "year": 2024,
-      "photoUrl": "photos/casabharat-current.jpg",
-      "caption": "Casa Bharat today, operating as a heritage inn in Fontainhas, near Panjim Church. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying. NOTE: visually similar to Casa Dempo — flag for similarity-margin check."
     },
     {
       "id": "hotelimperial-old",
@@ -252,7 +232,7 @@
       "lon": 73.8283,
       "heading": 0,
       "year": 1960,
-      "photoUrl": "photos/hotelimperial-old.jpg",
+      "photoUrl": "photos/hotelimperial-old.png",
       "caption": "The Predio Abilio Coelho Pereira building, historically known as Hotel Imperial, on Rua Dom João de Castro overlooking the Mandovi River waterfront. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying. NOTE: very close to Adil Shah Palace — verify real distance."
     },
     {
@@ -262,7 +242,7 @@
       "lon": 73.8283,
       "heading": 0,
       "year": 2024,
-      "photoUrl": "photos/hotelimperial-current.jpg",
+      "photoUrl": "photos/hotelimperial-current.png",
       "caption": "The same building today, still standing on the Panjim waterfront near the Adil Shah Palace and Idalcão riverside stretch. COORDINATES ARE ESTIMATED — pin on Google Maps before deploying. NOTE: very close to Adil Shah Palace — verify real distance."
     }
   ]
