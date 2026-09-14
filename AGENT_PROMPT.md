@@ -49,7 +49,7 @@ from real research and must survive untouched:
       "lat": 15.4965,
       "lon": 73.8305,
       "heading": 250,
-      "year": 2025,
+      "year": 2026,
       "photoUrl": "photos/mushtifund-current.jpg",
       "caption": "Now Bookworm Trust & Library, House No. 127, Mala, Fontainhas — the children's library moved into this old blue-and-white building in September 2018"
     }
